@@ -10,14 +10,15 @@ import java.io.InputStream;
 
 
 public class apiCalls {
-    private final String baseUrl = "https://api.spacexdata.com/v4";
-    public URL url;
+    public final String baseUrl = "https://api.spacexdata.com/v4";
+
 
     //this method is used to make a GET request to the SpaceX API
     public JSONObject get(String endpoint) throws Exception {
-        url = new URL(baseUrl + endpoint);
+        URL url = new URL(baseUrl + "/" + endpoint);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
+        connection.setRequestProperty("Accept", "application/json");
 
         try {
 
@@ -42,9 +43,12 @@ public class apiCalls {
 
     //this method is used to make a POST request to the SpaceX API to filter the input data by the user
     public JSONObject post(String endpoint, JSONObject filter) throws Exception {
-        url = new URL(baseUrl + endpoint);
+        URL url = new URL(baseUrl + "/" + endpoint +"/query");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setDoOutput(true);
 
 
         try {
