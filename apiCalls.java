@@ -105,7 +105,7 @@ public class apiCalls {
         return get(category.getEndpoint() + "/" + id);
     }
 
-    public JSONObject getItemsByFilter(Category category, JSONObject filter) throws Exception {
-        return post(category.getEndpoint(), filter);
+    public JSONObject queryCategory(Category category, JSONObject filters) throws Exception {
+        return post(category.getEndpoint() + "/query", filters);
     }
 }
