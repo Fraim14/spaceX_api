@@ -15,7 +15,7 @@ public class apiCalls {
 
     //this method is used to make a GET request to the SpaceX API
     public JSONObject get(String endpoint) throws Exception {
-        URL url = new URL(baseUrl + "/" + endpoint);
+        URL url = new URL(baseUrl + endpoint);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Accept", "application/json");
@@ -43,7 +43,7 @@ public class apiCalls {
 
     //this method is used to make a POST request to the SpaceX API to filter the input data by the user
     public JSONObject post(String endpoint, JSONObject filter) throws Exception {
-        URL url = new URL(baseUrl + "/" + endpoint +"/query");
+        URL url = new URL(baseUrl + endpoint);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
