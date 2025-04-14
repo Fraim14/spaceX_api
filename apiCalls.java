@@ -13,6 +13,7 @@ public class apiCalls {
     public final String baseUrl = "https://api.spacexdata.com/v4";
 
 
+
     //this method is used to make a GET request to the SpaceX API
     public JSONObject get(String endpoint) throws Exception {
         URL url = new URL(baseUrl + endpoint);
@@ -76,5 +77,35 @@ public class apiCalls {
         }
 
 
+    }
+    public enum Category {
+        LAUNCHES("/launches"),
+        ROCKETS("/rockets"),
+        LAUNCHPADS("/launchpads"),
+        CREW("/crew"),
+        CAPSULES("/capsules");
+
+        private final String endpoint;
+
+        Category(String endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        public String getEndpoint() {
+            return endpoint;
+        }
+    }
+
+
+    public JSONObject getCategory(Category category) throws Exception {
+        return get(category.getEndpoint());
+    }
+
+    public JSONObject getItemById(Category category, String id) throws Exception {
+        return get(category.getEndpoint() + "/" + id);
+    }
+
+    public JSONObject getItemsByFilter(Category category, JSONObject filter) throws Exception {
+        return post(category.getEndpoint(), filter);
     }
 }
