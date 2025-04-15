@@ -13,7 +13,6 @@ public class apiCalls {
     public final String baseUrl = "https://api.spacexdata.com/v4";
 
 
-
     //this method is used to make a GET request to the SpaceX API
     public JSONObject get(String endpoint) throws Exception {
         URL url = new URL(baseUrl + endpoint);
@@ -78,6 +77,7 @@ public class apiCalls {
 
 
     }
+
     public enum Category {
         LAUNCHES("/launches"),
         ROCKETS("/rockets"),
