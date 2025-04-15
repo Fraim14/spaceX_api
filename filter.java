@@ -4,12 +4,8 @@ import org.json.JSONObject;
 
 import java.util.Scanner;
 
-public class userSelection extends apiCalls {
+public class filter extends apiCalls {
     private final Scanner scanner = new Scanner(System.in);
-
-    public void displayItemById() {
-
-    }
 
     public void filterData() {
         Category selectedCategory = selectCategory();
@@ -77,9 +73,10 @@ public class userSelection extends apiCalls {
                 System.out.println("3. Launchpads");
                 System.out.println("4. Crew");
                 System.out.println("5. Capsules");
-                System.out.println("6. Exit");
+                System.out.println("6. Starlinks");
+                System.out.println("7. Exit");
 
-                System.out.print("Enter your choice 1-6: ");
+                System.out.print("Enter your choice 1-7: ");
                 if (!scanner.hasNextInt()) {
                     System.out.println("Please enter a valid number.");
                     scanner.nextLine();
@@ -101,10 +98,12 @@ public class userSelection extends apiCalls {
                     case 5:
                         return Category.CAPSULES;
                     case 6:
+                        return Category.STARLINK;
+                    case 7:
                         System.out.println("You have left the select category menu...");
                         return null;
                     default:
-                        System.out.println("Please enter a number between 1 and 6.");
+                        System.out.println("Please enter a number between 1 and 7.");
                         continue;
                 }
             } catch (Exception e) {
@@ -231,6 +230,9 @@ public class userSelection extends apiCalls {
             case CAPSULES:
                 createCapsuleFilters(query);
                 break;
+            case STARLINK:
+                createStarlinkFilters(query);
+                break;
         }
 
         filters.put("query", query);
@@ -354,6 +356,27 @@ public class userSelection extends apiCalls {
         }
     }
 
+    private void createStarlinkFilters(JSONObject query) {
+        System.out.println("Select Starlink filters:");
+        System.out.println("1. Filter by version");
+        System.out.println("2. Filter by launch date");
+        System.out.println("3. Both filters");
+
+        int choice = getValidChoice(1, 3);
+        switch (choice) {
+            case 1:
+                query.put("version", getValidInput("Version (e.g., v1.0, v1.5): "));
+                break;
+            case 2:
+                query.put("launch_date", getValidInput("Launch date (YYYY-MM-DD): "));
+                break;
+            case 3:
+                query.put("version", getValidInput("Version (e.g., v1.0, v1.5): "));
+                query.put("launch_date", getValidInput("Launch date (YYYY-MM-DD): "));
+                break;
+        }
+    }
+
     private void displayNoResultsFound(Category selectedCategory) {
         System.out.println("\n┌──────────────────────────────────────┐");
         System.out.println("│          No Results Found            │");
@@ -367,22 +390,50 @@ public class userSelection extends apiCalls {
             case LAUNCHES:
                 System.out.println("• Try different success/upcoming combinations");
                 System.out.println("• Most launches are either upcoming or have a success status");
+                System.out.println("\nExample filters:");
+                System.out.println("1. success: true, upcoming: false  (Past successful launches)");
+                System.out.println("2. success: false, upcoming: false (Failed launches)");
+                System.out.println("3. upcoming: true                  (Future launches)");
                 break;
             case ROCKETS:
                 System.out.println("• Common rocket types: 'v1.0', 'v1.1', 'v1.2'");
                 System.out.println("• Try checking active rockets (active: true)");
+                System.out.println("\nExample filters:");
+                System.out.println("1. active: true, type: v1.2       (Active Falcon 9 v1.2)");
+                System.out.println("2. active: false                  (Retired rockets)");
+                System.out.println("3. type: v1.0                     (Original Falcon 9)");
                 break;
             case LAUNCHPADS:
                 System.out.println("• Available regions: Florida, Texas, California");
                 System.out.println("• Status can be 'active' or 'inactive'");
+                System.out.println("\nExample filters:");
+                System.out.println("1. status: active, region: Florida (Active Florida pads)");
+                System.out.println("2. region: Texas                   (All Texas facilities)");
+                System.out.println("3. status: inactive                (Retired launchpads)");
                 break;
             case CREW:
                 System.out.println("• Common agencies: 'NASA', 'SpaceX'");
                 System.out.println("• Status is typically 'active' or 'inactive'");
+                System.out.println("\nExample filters:");
+                System.out.println("1. agency: NASA, status: active    (Active NASA astronauts)");
+                System.out.println("2. agency: SpaceX                  (All SpaceX crew)");
+                System.out.println("3. status: inactive                (Retired astronauts)");
                 break;
             case CAPSULES:
                 System.out.println("• Types include: 'Dragon 1.0', 'Dragon 2.0'");
                 System.out.println("• Status can be 'active', 'retired', or 'unknown'");
+                System.out.println("\nExample filters:");
+                System.out.println("1. type: Dragon 2.0, status: active (Active Dragon 2 capsules)");
+                System.out.println("2. status: retired                  (All retired capsules)");
+                System.out.println("3. type: Dragon 1.0                 (All Dragon 1 capsules)");
+                break;
+            case STARLINK:
+                System.out.println("• Available versions: 'v1.0', 'v1.5'");
+                System.out.println("• Launch dates format: YYYY-MM-DD");
+                System.out.println("\nExample filters:");
+                System.out.println("1. version: v1.5                    (All v1.5 satellites)");
+                System.out.println("2. launch_date: 2020-01-01         (Satellites launched after 2020)");
+                System.out.println("3. version: v1.0, launch_date: 2019-05-24  (v1.0 satellites from specific launch)");
                 break;
         }
         System.out.println("\nTry modifying your filters and search again!");
@@ -445,6 +496,17 @@ public class userSelection extends apiCalls {
                 System.out.println("5. Last Update");
                 System.out.println("6. ID");
                 break;
+            case STARLINK:
+                availableFields = new String[]{"version", "launch_date", "longitude", "latitude", "height_km", "velocity_kms", "id"};
+                System.out.println("\nAvailable Starlink fields:");
+                System.out.println("1. Version");
+                System.out.println("2. Launch Date");
+                System.out.println("3. Longitude");
+                System.out.println("4. Latitude");
+                System.out.println("5. Height (km)");
+                System.out.println("6. Velocity (km/s)");
+                System.out.println("7. ID");
+                break;
             default:
                 return;
         }
@@ -488,6 +550,87 @@ public class userSelection extends apiCalls {
                     System.out.println("Invalid selection: " + selection);
                 }
             }
+        }
+    }
+
+    public void findById() {
+        Category selectedCategory = selectCategory();
+        if (selectedCategory != null) {
+            try {
+                System.out.println("\n=== Find " + selectedCategory.name() + " by ID ===");
+                String id = getValidInput("Enter ID: ");
+
+                try {
+                    JSONObject result = getItemById(selectedCategory, id);
+                    System.out.println("\n=== Found " + selectedCategory.name() + " ===");
+                    System.out.println("How would you like to view the result?");
+                    System.out.println("1. Select specific fields to display");
+                    System.out.println("2. Show all information");
+                    System.out.print("Enter your choice (1-2): ");
+
+                    if (scanner.hasNextInt()) {
+                        int choice = scanner.nextInt();
+                        scanner.nextLine(); // Clear buffer
+
+                        // Create a JSONObject structure similar to query results
+                        JSONObject formattedResult = new JSONObject();
+                        JSONArray docsArray = new JSONArray();
+                        docsArray.put(result);
+                        formattedResult.put("docs", docsArray);
+
+                        if (choice == 1) {
+                            displaySelectedFields(selectedCategory, formattedResult);
+                        } else {
+                            System.out.println("\n=== Complete Information ===");
+                            displayAllInformation(selectedCategory, formattedResult);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("\n┌──────────────────────────────────────┐");
+                    System.out.println("│          Item Not Found              │");
+                    System.out.println("└──────────────────────────────────────┘");
+                    System.out.println("\nPossible reasons:");
+                    System.out.println("• The ID might be incorrect");
+                    System.out.println("• The item might have been deleted or moved");
+                    System.out.println("\nSuggestions:");
+                    System.out.println("• Double-check the ID");
+                    System.out.println("• Try searching with filters instead");
+
+                    switch (selectedCategory) {
+                        case LAUNCHES:
+                            System.out.println("\nExample Launch ID format: 5eb87cd9ffd86e000604b32a");
+                            break;
+                        case ROCKETS:
+                            System.out.println("\nExample Rocket ID format: 5e9d0d95eda69955f709d1eb");
+                            break;
+                        case LAUNCHPADS:
+                            System.out.println("\nExample Launchpad ID format: 5e9e4501f509094ba4566f84");
+                            break;
+                        case CREW:
+                            System.out.println("\nExample Crew ID format: 5ebf1a6e23a9a60006e03a7a");
+                            break;
+                        case CAPSULES:
+                            System.out.println("\nExample Capsule ID format: 5e9e2c5bf35918ed873b2664");
+                            break;
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void displayAllInformation(Category category, JSONObject result) {
+        JSONArray docs = result.getJSONArray("docs");
+
+        for (int i = 0; i < docs.length(); i++) {
+            JSONObject doc = docs.getJSONObject(i);
+            System.out.println("\nResult " + (i + 1) + ":");
+            System.out.println("------------------------");
+
+            // Format and display the JSON with indentation
+            String formattedJson = doc.toString(2); // 2 spaces for indentation
+            System.out.println(formattedJson);
         }
     }
 }

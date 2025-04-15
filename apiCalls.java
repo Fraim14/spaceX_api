@@ -83,7 +83,8 @@ public class apiCalls {
         ROCKETS("/rockets"),
         LAUNCHPADS("/launchpads"),
         CREW("/crew"),
-        CAPSULES("/capsules");
+        CAPSULES("/capsules"),
+        STARLINK("/starlink");
 
         private final String endpoint;
 
