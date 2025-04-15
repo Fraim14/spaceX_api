@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import java.util.List;
 import java.util.Scanner;
 
-public class filter extends apiCalls {
+public class Filter extends apiCalls {
     private final Scanner scanner = new Scanner(System.in);
 
     public void filterData() {
@@ -75,17 +75,15 @@ public class filter extends apiCalls {
                 System.out.println("4. Crew");
                 System.out.println("5. Capsules");
                 System.out.println("6. Starlinks");
-                System.out.println("7. Exit");
 
-                System.out.print("Enter your choice 1-7: ");
+                System.out.print("Enter your choice 1-6: ");
                 if (!scanner.hasNextInt()) {
                     System.out.println("Please enter a valid number.");
                     scanner.nextLine();
                     continue;
                 }
 
-                int choice = scanner.nextInt();
-                scanner.nextLine();
+                int choice = getValidChoice(1, 6);
 
                 switch (choice) {
                     case 1:
@@ -100,9 +98,6 @@ public class filter extends apiCalls {
                         return Category.CAPSULES;
                     case 6:
                         return Category.STARLINK;
-                    case 7:
-                        System.out.println("You have left the select category menu...");
-                        return null;
                     default:
                         System.out.println("Please enter a number between 1 and 7.");
                         continue;
