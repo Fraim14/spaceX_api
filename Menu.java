@@ -12,7 +12,7 @@ public class Menu {
 
         System.out.println("Welcome to the Space API!");
         System.out.println("Please select an option:");
-        System.out.println("1.  Select what you want to find");
+        System.out.println("1. Select what you want to find");
         System.out.println("2. Settings");
         System.out.println("3. Cache");
         System.out.println("4. Exit");
