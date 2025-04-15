@@ -2,6 +2,7 @@
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.Scanner;
 
 public class filter extends apiCalls {
@@ -52,9 +53,9 @@ public class filter extends apiCalls {
                         if (choice == 1) {
                             displaySelectedFields(selectedCategory, initialResult);
                         } else {
-                            // Show all results
+                            // Show all results using displayAllInformation
                             System.out.println("\n=== Complete Results ===");
-                            System.out.println(initialResult.toString(2));
+                            displayAllInformation(selectedCategory, initialResult);
                         }
                     }
                 }
@@ -622,15 +623,11 @@ public class filter extends apiCalls {
 
     private void displayAllInformation(Category category, JSONObject result) {
         JSONArray docs = result.getJSONArray("docs");
+        List<DTO> dtoList = DTO.fromJSONArray(docs, category);
 
-        for (int i = 0; i < docs.length(); i++) {
-            JSONObject doc = docs.getJSONObject(i);
+        for (int i = 0; i < dtoList.size(); i++) {
             System.out.println("\nResult " + (i + 1) + ":");
-            System.out.println("------------------------");
-
-            // Format and display the JSON with indentation
-            String formattedJson = doc.toString(2); // 2 spaces for indentation
-            System.out.println(formattedJson);
+            System.out.println(dtoList.get(i).displayAllInformation(category));
         }
     }
 }
