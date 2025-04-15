@@ -7,6 +7,10 @@ import java.util.Scanner;
 public class userSelection extends apiCalls {
     private final Scanner scanner = new Scanner(System.in);
 
+    public void displayItemById() {
+
+    }
+
     public void filterData() {
         Category selectedCategory = selectCategory();
         if (selectedCategory != null) {
@@ -19,6 +23,9 @@ public class userSelection extends apiCalls {
 
                 System.out.println("\nTotal available results: " + totalAvailable);
 
+                if (totalAvailable == 0) {
+                    displayNoResultsFound(selectedCategory);
+                }
                 int limit = selectLimit(totalAvailable);
                 if (limit > 0) {
                     JSONObject options = new JSONObject();
@@ -387,24 +394,26 @@ public class userSelection extends apiCalls {
         // Define available fields based on category
         switch (category) {
             case LAUNCHES:
-                availableFields = new String[]{"name", "flight_number", "date_utc", "success", "details", "id"};
+                availableFields = new String[]{"name", "flight_number", "date_utc", "success", "details", "links", "id"};
                 System.out.println("\nAvailable Launch fields:");
                 System.out.println("1. Name (Launch name)");
                 System.out.println("2. Flight Number");
                 System.out.println("3. Date");
                 System.out.println("4. Success Status");
                 System.out.println("5. Details");
-                System.out.println("6. ID");
+                System.out.println("6. Wikipedia Link");
+                System.out.println("7. ID");
                 break;
             case ROCKETS:
-                availableFields = new String[]{"name", "type", "active", "description", "height", "id"};
+                availableFields = new String[]{"name", "type", "active", "description", "height", "wikipedia", "id"};
                 System.out.println("\nAvailable Rocket fields:");
                 System.out.println("1. Name");
                 System.out.println("2. Type");
                 System.out.println("3. Active Status");
                 System.out.println("4. Description");
                 System.out.println("5. Height");
-                System.out.println("6. ID");
+                System.out.println("6. Wikipedia Link");
+                System.out.println("7. ID");
                 break;
             case LAUNCHPADS:
                 availableFields = new String[]{"name", "full_name", "region", "status", "details", "id"};
@@ -417,13 +426,14 @@ public class userSelection extends apiCalls {
                 System.out.println("6. ID");
                 break;
             case CREW:
-                availableFields = new String[]{"name", "agency", "status", "launches", "id"};
+                availableFields = new String[]{"name", "agency", "status", "launches", "wikipedia", "id"};
                 System.out.println("\nAvailable Crew fields:");
                 System.out.println("1. Name");
                 System.out.println("2. Agency");
                 System.out.println("3. Status");
                 System.out.println("4. Launches");
-                System.out.println("5. ID");
+                System.out.println("5. Wikipedia Link");
+                System.out.println("6. ID");
                 break;
             case CAPSULES:
                 availableFields = new String[]{"serial", "type", "status", "launches", "last_update", "id"};
@@ -459,11 +469,20 @@ public class userSelection extends apiCalls {
                     int fieldIndex = Integer.parseInt(selection) - 1;
                     if (fieldIndex >= 0 && fieldIndex < availableFields.length) {
                         String fieldName = availableFields[fieldIndex];
-                        Object value = doc.has(fieldName) ? doc.get(fieldName) : "N/A";
-                        // Format the field name for display
                         String displayName = fieldName.substring(0, 1).toUpperCase() +
                                 fieldName.substring(1).replace("_", " ");
-                        System.out.println(displayName + ": " + value);
+
+                        // Special handling for links in launches
+                        if (category == Category.LAUNCHES && fieldName.equals("links")) {
+                            JSONObject links = doc.getJSONObject("links");
+                            String wikiLink = links.optString("wikipedia", "N/A");
+                            System.out.println("Wikipedia Link: " + wikiLink);
+                        }
+                        // Regular fields
+                        else {
+                            Object value = doc.has(fieldName) ? doc.get(fieldName) : "N/A";
+                            System.out.println(displayName + ": " + value);
+                        }
                     }
                 } catch (NumberFormatException e) {
                     System.out.println("Invalid selection: " + selection);
