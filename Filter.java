@@ -1,4 +1,4 @@
-
+// Maksym Shtymak 3151565
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -7,6 +7,26 @@ import java.util.Scanner;
 
 public class Filter extends apiCalls {
     private final Scanner scanner = new Scanner(System.in);
+    private final Settings settings = Settings.getInstance();
+    private String emoji = settings.getShowEmoji() ? "📄 " : "";
+    private String colorStart = settings.getColoredOutput() ? "\u001B[36m" : ""; // Cyan color
+    private String colorEnd = settings.getColoredOutput() ? "\u001B[0m" : "";
+
+
+    private void returnToMainMenu() {
+        Menu menu = new Menu();
+        System.out.print(settings.formatPrompt("Return to main menu? (y/n): "));
+        String choice = scanner.nextLine().trim().toLowerCase();
+        if (choice.equals("y") || choice.equals("yes")) {
+            menu.displayMenu();
+        } else if(choice.equals("n") || choice.equals("no")){
+            System.out.println(settings.formatSuccess("Exiting program. Goodbye!"));
+        }else {
+            System.out.println(settings.formatError("Invalid choice: " + choice));
+            System.out.println(settings.formatHighlight("Please enter either 'y' or 'n'"));
+            returnToMainMenu();
+        }
+    }
 
     public void filterData() {
         Category selectedCategory = selectCategory();
@@ -14,69 +34,61 @@ public class Filter extends apiCalls {
             JSONObject filters = createFilters(selectedCategory);
 
             try {
-                // First get total count without limit
                 JSONObject initialResult = queryCategory(selectedCategory, filters);
                 int totalAvailable = initialResult.getInt("totalDocs");
 
-                System.out.println("\nTotal available results: " + totalAvailable);
+                System.out.println(settings.formatMenuHeader("Search Results"));
+                System.out.println(settings.formatHighlight("Total available results: " + totalAvailable));
 
                 if (totalAvailable == 0) {
                     displayNoResultsFound(selectedCategory);
+                    returnToMainMenu();
+                    return;
                 }
+
                 int limit = selectLimit(totalAvailable);
                 if (limit > 0) {
                     JSONObject options = new JSONObject();
                     options.put("limit", limit);
                     filters.put("options", options);
-
-                    // Query again with limit if needed
                     initialResult = queryCategory(selectedCategory, filters);
                 }
 
-                if (initialResult.getJSONArray("docs").length() == 0) {
-                    displayNoResultsFound(selectedCategory);
-                } else {
-                    System.out.println("\n=== Initial Filter Results ===");
-                    System.out.println("Displaying " + initialResult.getJSONArray("docs").length() +
-                            " out of " + totalAvailable + " total results");
+                System.out.println(settings.formatMenuHeader("View Options"));
+                System.out.println(settings.formatMenuItem("1", "Select specific fields to display"));
+                System.out.println(settings.formatMenuItem("2", "Show all information"));
+                System.out.print(settings.formatPrompt("Enter your choice (1-2): "));
 
-                    // Display options
-                    System.out.println("\nHow would you like to view the results?");
-                    System.out.println("1. Select specific fields to display");
-                    System.out.println("2. Show all information");
-                    System.out.print("Enter your choice (1-2): ");
+                if (scanner.hasNextInt()) {
+                    int choice = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
 
-                    if (scanner.hasNextInt()) {
-                        int choice = scanner.nextInt();
-                        scanner.nextLine(); // Clear buffer
-
-                        if (choice == 1) {
-                            displaySelectedFields(selectedCategory, initialResult);
-                        } else {
-                            // Show all results using displayAllInformation
-                            System.out.println("\n=== Complete Results ===");
-                            displayAllInformation(selectedCategory, initialResult);
-                        }
+                    if (choice == 1) {
+                        displaySelectedFields(selectedCategory, initialResult);
+                    } else {
+                        System.out.println(settings.formatMenuHeader("Complete Results"));
+                        displayAllInformation(selectedCategory, initialResult);
                     }
                 }
             } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                System.out.println(settings.formatError("Error: " + e.getMessage()));
             }
+            returnToMainMenu();
         }
     }
 
     private Category selectCategory() {
         while (true) {
             try {
-                System.out.println("\n=== Select Category ===");
-                System.out.println("1. Launches");
-                System.out.println("2. Rockets");
-                System.out.println("3. Launchpads");
-                System.out.println("4. Crew");
-                System.out.println("5. Capsules");
-                System.out.println("6. Starlinks");
-
-                System.out.print("Enter your choice 1-6: ");
+                System.out.println(settings.formatMenuHeader("Select Category"));
+                System.out.println(settings.formatMenuItem("1", "Launches"));
+                System.out.println(settings.formatMenuItem("2", "Rockets"));
+                System.out.println(settings.formatMenuItem("3", "Launchpads"));
+                System.out.println(settings.formatMenuItem("4", "Crew"));
+                System.out.println(settings.formatMenuItem("5", "Capsules"));
+                System.out.println(settings.formatMenuItem("6", "Starlinks"));
+                
+                System.out.print("\n" + settings.formatPrompt("Enter your choice (1-6): "));
                 if (!scanner.hasNextInt()) {
                     System.out.println("Please enter a valid number.");
                     scanner.nextLine();
@@ -111,94 +123,92 @@ public class Filter extends apiCalls {
 
     private int selectLimit(int totalAvailable) {
         while (true) {
-            try {
-                System.out.println("\n=== Select Number of Results ===");
-                System.out.println("1. Show all results");
-                System.out.println("2. Specify number of results");
-                System.out.println("(Maximum available results: " + totalAvailable + ")");
+            System.out.println(settings.formatMenuHeader("Select Number of Results"));
+            System.out.println(settings.formatMenuItem("1", "Show all results"));
+            System.out.println(settings.formatMenuItem("2", "Specify number of results"));
+            
+            // Format the maximum available results line using Settings methods
+            String maxResults = String.format("Maximum available results: %d", totalAvailable);
+            System.out.println(settings.formatBoxedInfo(maxResults));
 
-                System.out.print("Enter your choice (1-2): ");
-                if (!scanner.hasNextInt()) {
-                    System.out.println("Please enter a valid number.");
-                    scanner.nextLine(); // Clear invalid input
-                    continue;
+            System.out.print("\n" + settings.formatPrompt("Enter your choice (1-2): "));
+            
+            if (!scanner.hasNextInt()) {
+                String invalidInput = scanner.nextLine();
+                System.out.println(settings.formatError("Invalid input: '" + invalidInput + "'"));
+                System.out.println(settings.formatHighlight("Please enter either 1 or 2"));
+                continue;
+            }
+
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Clear buffer
+
+            if (choice == 1) {
+                return totalAvailable;
+            } else if (choice == 2) {
+                System.out.print(settings.formatPrompt("Enter number of results (1-" + totalAvailable + "): "));
+                if (scanner.hasNextInt()) {
+                    int limit = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    if (limit > 0 && limit <= totalAvailable) {
+                        return limit;
+                    }
+                } else {
+                    String invalidInput = scanner.nextLine();
+                    System.out.println(settings.formatError("Invalid input: '" + invalidInput + "'"));
                 }
-
-                int choice = scanner.nextInt();
-                scanner.nextLine(); // Clear buffer
-
-                switch (choice) {
-                    case 1:
-                        return 0;
-                    case 2:
-                        while (true) {
-                            System.out.printf("Enter number of results to show (1-%d): ", totalAvailable);
-                            if (!scanner.hasNextInt()) {
-                                System.out.println("Please enter a valid number.");
-                                scanner.nextLine();
-                                continue;
-                            }
-                            int limit = scanner.nextInt();
-                            scanner.nextLine();
-                            if (limit <= 0) {
-                                System.out.println("Please enter a positive number.");
-                                continue;
-                            }
-                            if (limit > totalAvailable) {
-                                System.out.printf("Please enter a number not exceeding %d.\n", totalAvailable);
-                                continue;
-                            }
-                            return limit;
-                        }
-                    default:
-                        System.out.println("Please enter either 1 or 2.");
-                }
-            } catch (Exception e) {
-                System.out.println("Error selecting limit: " + e.getMessage());
-                scanner.nextLine(); // Clear any bad input
+                System.out.println(settings.formatHighlight("Please enter a number between 1 and " + totalAvailable));
+            } else {
+                System.out.println(settings.formatError("Invalid choice: " + choice));
+                System.out.println(settings.formatHighlight("Please enter either 1 or 2"));
             }
         }
     }
 
     private boolean getValidBoolean(String prompt) {
         while (true) {
-            System.out.print(prompt);
+            System.out.print(settings.formatPrompt(prompt));
             String input = scanner.nextLine().toLowerCase().trim();
             if (input.equals("true") || input.equals("false")) {
                 return Boolean.parseBoolean(input);
             }
-            System.out.println("Please enter either 'true' or 'false'.");
+            System.out.println(settings.formatError("Invalid input: '" + input + "'"));
+            System.out.println(settings.formatHighlight("Please enter either 'true' or 'false'"));
         }
     }
 
     private String getValidInput(String prompt) {
         while (true) {
-            System.out.print(prompt);
+            System.out.print(settings.formatPrompt(prompt));
             String input = scanner.nextLine().trim();
             if (!input.isEmpty()) {
                 return input;
             }
-            System.out.println("Input cannot be empty. Please try again.");
+            System.out.println(settings.formatError("Input cannot be empty"));
+            System.out.println(settings.formatHighlight("Please enter a valid value"));
         }
     }
 
     private int getValidChoice(int min, int max) {
         while (true) {
             try {
-                System.out.print("Enter choice: ");
+                System.out.print(settings.formatPrompt("Enter your choice (" + min + "-" + max + "): "));
                 if (!scanner.hasNextInt()) {
-                    System.out.println("Please enter a valid number.");
-                    scanner.nextLine();
+                    String invalidInput = scanner.nextLine();
+                    System.out.println(settings.formatError("Invalid input: '" + invalidInput + "'"));
+                    System.out.println(settings.formatHighlight("Please enter a number between " + min + " and " + max));
                     continue;
                 }
                 int choice = scanner.nextInt();
-                scanner.nextLine();
+                scanner.nextLine(); // consume newline
                 if (choice >= min && choice <= max) {
                     return choice;
                 }
-                System.out.printf("Please enter a number between %d and %d.\n", min, max);
+                System.out.println(settings.formatError("Invalid number: " + choice));
+                System.out.println(settings.formatHighlight("Please enter a number between " + min + " and " + max));
             } catch (Exception e) {
-                System.out.println("Invalid input. Please try again.");
+                System.out.println(settings.formatError("Invalid input format"));
+                System.out.println(settings.formatHighlight("Please enter a valid number"));
                 scanner.nextLine();
             }
         }
@@ -208,7 +218,7 @@ public class Filter extends apiCalls {
         JSONObject filters = new JSONObject();
         JSONObject query = new JSONObject();
 
-        System.out.println("\n=== Create Filters ===");
+        System.out.println(settings.formatMenuHeader("Create Filters"));
 
         switch (category) {
             case LAUNCHES:
@@ -236,316 +246,406 @@ public class Filter extends apiCalls {
     }
 
     private void createLaunchFilters(JSONObject query) {
-        System.out.println("Select launch filters:");
-        System.out.println("1. Filter by success");
-        System.out.println("2. Filter by upcoming");
-        System.out.println("3. Both filters");
-
+        System.out.println(settings.formatMenuHeader("Launch Filters"));
+        System.out.println(settings.formatMenuItem("1", "Filter by success"));
+        System.out.println(settings.formatMenuItem("2", "Filter by upcoming"));
+        System.out.println(settings.formatMenuItem("3", "Both filters"));
+        
         int choice = getValidChoice(1, 3);
+        
+        System.out.println(settings.formatBoxedInfo("Configure Filters"));
         switch (choice) {
-            case 1:
-                query.put("success", getValidBoolean("Success (true/false): "));
-                break;
-            case 2:
-                query.put("upcoming", getValidBoolean("Upcoming (true/false): "));
-                break;
-            case 3:
-                query.put("success", getValidBoolean("Success (true/false): "));
-                query.put("upcoming", getValidBoolean("Upcoming (true/false): "));
-                break;
+            case 1 -> {
+                System.out.println(settings.formatHighlight("\nEnter 'true' for successful launches, 'false' for failed launches"));
+                boolean success = getValidBoolean(settings.formatPrompt("Success (true/false): "));
+                query.put("success", success);
+                System.out.println(settings.formatSuccess("Filter applied: success = " + success));
+            }
+            case 2 -> {
+                System.out.println(settings.formatHighlight("\nEnter 'true' for upcoming launches, 'false' for past launches"));
+                boolean upcoming = getValidBoolean(settings.formatPrompt("Upcoming (true/false): "));
+                query.put("upcoming", upcoming);
+                System.out.println(settings.formatSuccess("Filter applied: upcoming = " + upcoming));
+            }
+            case 3 -> {
+                System.out.println(settings.formatHighlight("\nEnter 'true' for successful launches, 'false' for failed launches"));
+                boolean success = getValidBoolean(settings.formatPrompt("Success (true/false): "));
+                System.out.println(settings.formatHighlight("\nEnter 'true' for upcoming launches, 'false' for past launches"));
+                boolean upcoming = getValidBoolean(settings.formatPrompt("Upcoming (true/false): "));
+                query.put("success", success);
+                query.put("upcoming", upcoming);
+                System.out.println(settings.formatSuccess("Filters applied:"));
+                System.out.println(settings.formatHighlight("• Success: " + success));
+                System.out.println(settings.formatHighlight("• Upcoming: " + upcoming));
+            }
         }
     }
 
     private void createRocketFilters(JSONObject query) {
-        System.out.println("Select rocket filters:");
-        System.out.println("1. Filter by active status");
-        System.out.println("2. Filter by type");
-        System.out.println("3. Both filters");
+        System.out.println(settings.formatMenuHeader("Rocket Filters"));
+        System.out.println(settings.formatMenuItem("1", "Filter by active status"));
+        System.out.println(settings.formatMenuItem("2", "Filter by type"));
+        System.out.println(settings.formatMenuItem("3", "Both filters"));
 
+        System.out.print("\n" + settings.formatPrompt("Enter your choice (1-3): "));
         int choice = getValidChoice(1, 3);
+
+        System.out.println(settings.formatBoxedInfo("Configure Filters"));
         switch (choice) {
-            case 1:
-                query.put("active", getValidBoolean("Active (true/false): "));
-                break;
-            case 2:
-                query.put("type", getValidInput("Type: "));
-                break;
-            case 3:
-                query.put("active", getValidBoolean("Active (true/false): "));
-                query.put("type", getValidInput("Type: "));
-                break;
+            case 1 -> {
+                boolean active = getValidBoolean(settings.formatPrompt("Active (true/false): "));
+                query.put("active", active);
+                System.out.println(settings.formatSuccess("Filter applied: active = " + active));
+            }
+            case 2 -> {
+                System.out.println(settings.formatHighlight("\nAvailable types:"));
+                System.out.println(settings.formatMenuItem("•", "v1.0 - Falcon 9 Block 1"));
+                System.out.println(settings.formatMenuItem("•", "v1.1 - Falcon 9 Block 2"));
+                System.out.println(settings.formatMenuItem("•", "v1.2 - Falcon 9 Block 3"));
+                String type = getValidInput(settings.formatPrompt("Type: "));
+                query.put("type", type);
+                System.out.println(settings.formatSuccess("Filter applied: type = " + type));
+            }
+            case 3 -> {
+                boolean active = getValidBoolean(settings.formatPrompt("Active (true/false): "));
+                System.out.println(settings.formatHighlight("\nAvailable types:"));
+                System.out.println(settings.formatMenuItem("•", "v1.0 - Falcon 9 Block 1"));
+                System.out.println(settings.formatMenuItem("•", "v1.1 - Falcon 9 Block 2"));
+                System.out.println(settings.formatMenuItem("•", "v1.2 - Falcon 9 Block 3"));
+                String type = getValidInput(settings.formatPrompt("Type: "));
+                query.put("active", active);
+                query.put("type", type);
+                System.out.println(settings.formatSuccess("Filters applied:"));
+                System.out.println(settings.formatHighlight("• Active: " + active));
+                System.out.println(settings.formatHighlight("• Type: " + type));
+            }
         }
     }
 
 
     private void createLaunchpadFilters(JSONObject query) {
-        System.out.println("Select launchpad filters:");
-        System.out.println("1. Filter by status");
-        System.out.println("2. Filter by region");
-        System.out.println("3. Both filters");
+        System.out.println(settings.formatMenuHeader("Launchpad Filters"));
+        System.out.println(settings.formatMenuItem("1", "Filter by status"));
+        System.out.println(settings.formatMenuItem("2", "Filter by region"));
+        System.out.println(settings.formatMenuItem("3", "Both filters"));
 
+        System.out.print("\n" + settings.formatPrompt("Enter your choice (1-3): "));
         int choice = getValidChoice(1, 3);
+
+        System.out.println(settings.formatBoxedInfo("Configure Filters"));
         switch (choice) {
-            case 1:
-                query.put("status", getValidInput("Status (active/inactive): "));
-                break;
-            case 2:
-                System.out.println("\nAvailable regions:");
-                System.out.println("- Florida: Cape Canaveral, Kennedy Space Center");
-                System.out.println("- Texas: Boca Chica, McGregor");
-                System.out.println("- California: Vandenberg");
-                System.out.println("- Pacific Ocean: Kwajalein Atoll");
-                query.put("region", getValidInput("Region (e.g., Florida, Texas, California): "));
-                break;
-            case 3:
-                query.put("status", getValidInput("Status (active/inactive): "));
-                System.out.println("\nAvailable regions:");
-                System.out.println("- Florida: Cape Canaveral, Kennedy Space Center");
-                System.out.println("- Texas: Boca Chica, McGregor");
-                System.out.println("- California: Vandenberg");
-                System.out.println("- Pacific Ocean: Kwajalein Atoll");
-                query.put("region", getValidInput("Region (e.g., Florida, Texas, California): "));
-                break;
+            case 1 -> {
+                System.out.println(settings.formatHighlight("\nAvailable statuses:"));
+                System.out.println(settings.formatMenuItem("•", "active   - Currently operational"));
+                System.out.println(settings.formatMenuItem("•", "inactive - Not in use"));
+                String status = getValidInput(settings.formatPrompt("Status (active/inactive): "));
+                query.put("status", status);
+                System.out.println(settings.formatSuccess("Filter applied: status = " + status));
+            }
+            case 2 -> {
+                System.out.println(settings.formatMenuHeader("Available Regions"));
+                System.out.println(settings.formatMenuItem("•", "Florida"));
+                System.out.println(settings.formatHighlight("  ↳ Cape Canaveral"));
+                System.out.println(settings.formatHighlight("  ↳ Kennedy Space Center"));
+                System.out.println(settings.formatMenuItem("•", "Texas"));
+                System.out.println(settings.formatHighlight("  ↳ Boca Chica"));
+                System.out.println(settings.formatHighlight("  ↳ McGregor"));
+                System.out.println(settings.formatMenuItem("•", "California"));
+                System.out.println(settings.formatHighlight("  ↳ Vandenberg"));
+                String region = getValidInput(settings.formatPrompt("Region: "));
+                query.put("region", region);
+                System.out.println(settings.formatSuccess("Filter applied: region = " + region));
+            }
+            case 3 -> {
+                System.out.println(settings.formatHighlight("\nAvailable statuses:"));
+                System.out.println(settings.formatMenuItem("•", "active   - Currently operational"));
+                System.out.println(settings.formatMenuItem("•", "inactive - Not in use"));
+                String status = getValidInput(settings.formatPrompt("Status (active/inactive): "));
+                
+                System.out.println(settings.formatMenuHeader("Available Regions"));
+                System.out.println(settings.formatMenuItem("•", "Florida"));
+                System.out.println(settings.formatHighlight("  ↳ Cape Canaveral"));
+                System.out.println(settings.formatHighlight("  ↳ Kennedy Space Center"));
+                System.out.println(settings.formatMenuItem("•", "Texas"));
+                System.out.println(settings.formatHighlight("  ↳ Boca Chica"));
+                System.out.println(settings.formatHighlight("  ↳ McGregor"));
+                System.out.println(settings.formatMenuItem("•", "California"));
+                System.out.println(settings.formatHighlight("  ↳ Vandenberg"));
+                String region = getValidInput(settings.formatPrompt("Region: "));
+                
+                query.put("status", status);
+                query.put("region", region);
+                System.out.println(settings.formatSuccess("Filters applied:"));
+                System.out.println(settings.formatHighlight("• Status: " + status));
+                System.out.println(settings.formatHighlight("• Region: " + region));
+            }
         }
     }
 
     private void createCrewFilters(JSONObject query) {
-        System.out.println("Select crew filters:");
-        System.out.println("1. Filter by agency");
-        System.out.println("2. Filter by status");
-        System.out.println("3. Both filters");
+        System.out.println(settings.formatMenuHeader("Crew Filters"));
+        System.out.println(settings.formatMenuItem("1", "Filter by agency"));
+        System.out.println(settings.formatMenuItem("2", "Filter by status"));
+        System.out.println(settings.formatMenuItem("3", "Both filters"));
 
         int choice = getValidChoice(1, 3);
+
+        System.out.println(settings.formatBoxedInfo("Configure Filters"));
         switch (choice) {
-            case 1:
-                query.put("agency", getValidInput("Agency (e.g., NASA, SpaceX): "));
-                break;
-            case 2:
-                query.put("status", getValidInput("Status (active/inactive): "));
-                break;
-            case 3:
-                query.put("agency", getValidInput("Agency (e.g., NASA, SpaceX): "));
-                query.put("status", getValidInput("Status (active/inactive): "));
-                break;
+            case 1 -> {
+                System.out.println(settings.formatHighlight("\nMajor Space Agencies:"));
+                System.out.println(settings.formatMenuItem("•", "NASA    - National Aeronautics and Space Administration"));
+                System.out.println(settings.formatMenuItem("•", "SpaceX  - Space Exploration Technologies Corp"));
+                System.out.println(settings.formatMenuItem("•", "ESA     - European Space Agency"));
+                System.out.println(settings.formatMenuItem("•", "JAXA    - Japan Aerospace Exploration Agency"));
+                System.out.println(settings.formatMenuItem("•", "CSA     - Canadian Space Agency"));
+                String agency = getValidInput(settings.formatPrompt("Agency: "));
+                query.put("agency", agency);
+                System.out.println(settings.formatSuccess("Filter applied: agency = " + agency));
+            }
+            case 2 -> {
+                System.out.println(settings.formatHighlight("\nAvailable Statuses:"));
+                System.out.println(settings.formatMenuItem("•", "active    - Currently assigned to missions"));
+                System.out.println(settings.formatMenuItem("•", "inactive  - Retired or no longer flying"));
+                System.out.println(settings.formatMenuItem("•", "training  - In preparation for future missions"));
+                String status = getValidInput(settings.formatPrompt("Status: "));
+                query.put("status", status);
+                System.out.println(settings.formatSuccess("Filter applied: status = " + status));
+            }
+            case 3 -> {
+                System.out.println(settings.formatHighlight("\nMajor Space Agencies:"));
+                System.out.println(settings.formatMenuItem("•", "NASA    - National Aeronautics and Space Administration"));
+                System.out.println(settings.formatMenuItem("•", "SpaceX  - Space Exploration Technologies Corp"));
+                System.out.println(settings.formatMenuItem("•", "ESA     - European Space Agency"));
+                System.out.println(settings.formatMenuItem("•", "JAXA    - Japan Aerospace Exploration Agency"));
+                System.out.println(settings.formatMenuItem("•", "CSA     - Canadian Space Agency"));
+                String agency = getValidInput(settings.formatPrompt("Agency: "));
+
+                System.out.println(settings.formatHighlight("\nAvailable Statuses:"));
+                System.out.println(settings.formatMenuItem("•", "active    - Currently assigned to missions"));
+                System.out.println(settings.formatMenuItem("•", "inactive  - Retired or no longer flying"));
+                System.out.println(settings.formatMenuItem("•", "training  - In preparation for future missions"));
+                String status = getValidInput(settings.formatPrompt("Status: "));
+
+                query.put("agency", agency);
+                query.put("status", status);
+                System.out.println(settings.formatSuccess("Filters applied:"));
+                System.out.println(settings.formatHighlight("• Agency: " + agency));
+                System.out.println(settings.formatHighlight("• Status: " + status));
+            }
         }
     }
 
 
     private void createCapsuleFilters(JSONObject query) {
-        System.out.println("Select capsule filters:");
-        System.out.println("1. Filter by status");
-        System.out.println("2. Filter by type");
-        System.out.println("3. Both filters");
+        System.out.println(settings.formatMenuHeader("Capsule Filters"));
+        System.out.println(settings.formatMenuItem("1", "Filter by status"));
+        System.out.println(settings.formatMenuItem("2", "Filter by type"));
+        System.out.println(settings.formatMenuItem("3", "Both filters"));
 
         int choice = getValidChoice(1, 3);
+
+        System.out.println(settings.formatBoxedInfo("Configure Filters"));
         switch (choice) {
-            case 1:
-                query.put("status", getValidInput("Status (active/retired/unknown): "));
-                break;
-            case 2:
-                query.put("type", getValidInput("Type (e.g., Dragon 1.0, Dragon 2.0): "));
-                break;
-            case 3:
-                query.put("status", getValidInput("Status (active/retired/unknown): "));
-                query.put("type", getValidInput("Type (e.g., Dragon 1.0, Dragon 2.0): "));
-                break;
+            case 1 -> {
+                System.out.println(settings.formatHighlight("\nAvailable Statuses:"));
+                System.out.println(settings.formatMenuItem("•", "active    - Currently in service"));
+                System.out.println(settings.formatMenuItem("•", "retired   - No longer in operation"));
+                System.out.println(settings.formatMenuItem("•", "destroyed - Lost during mission"));
+                System.out.println(settings.formatMenuItem("•", "unknown   - Status not confirmed"));
+                String status = getValidInput(settings.formatPrompt("Status: "));
+                query.put("status", status);
+                System.out.println(settings.formatSuccess("Filter applied: status = " + status));
+            }
+            case 2 -> {
+                System.out.println(settings.formatHighlight("\nCapsule Types:"));
+                System.out.println(settings.formatMenuItem("•", "Dragon 1.0  - First generation cargo capsule"));
+                System.out.println(settings.formatMenuItem("•", "Dragon 1.1  - Updated cargo variant"));
+                System.out.println(settings.formatMenuItem("•", "Dragon 2.0  - Second generation capsule"));
+                System.out.println(settings.formatMenuItem("•", "Crew Dragon - Human-rated capsule"));
+                String type = getValidInput(settings.formatPrompt("Type: "));
+                query.put("type", type);
+                System.out.println(settings.formatSuccess("Filter applied: type = " + type));
+            }
+            case 3 -> {
+                System.out.println(settings.formatHighlight("\nAvailable Statuses:"));
+                System.out.println(settings.formatMenuItem("•", "active    - Currently in service"));
+                System.out.println(settings.formatMenuItem("•", "retired   - No longer in operation"));
+                System.out.println(settings.formatMenuItem("•", "destroyed - Lost during mission"));
+                System.out.println(settings.formatMenuItem("•", "unknown   - Status not confirmed"));
+                String status = getValidInput(settings.formatPrompt("Status: "));
+
+                System.out.println(settings.formatHighlight("\nCapsule Types:"));
+                System.out.println(settings.formatMenuItem("•", "Dragon 1.0  - First generation cargo capsule"));
+                System.out.println(settings.formatMenuItem("•", "Dragon 1.1  - Updated cargo variant"));
+                System.out.println(settings.formatMenuItem("•", "Dragon 2.0  - Second generation capsule"));
+                System.out.println(settings.formatMenuItem("•", "Crew Dragon - Human-rated capsule"));
+                String type = getValidInput(settings.formatPrompt("Type: "));
+
+                query.put("status", status);
+                query.put("type", type);
+                System.out.println(settings.formatSuccess("Filters applied:"));
+                System.out.println(settings.formatHighlight("• Status: " + status));
+                System.out.println(settings.formatHighlight("• Type: " + type));
+            }
         }
     }
 
     private void createStarlinkFilters(JSONObject query) {
-        System.out.println("Select Starlink filters:");
-        System.out.println("1. Filter by version");
-        System.out.println("2. Filter by launch date");
-        System.out.println("3. Both filters");
+        System.out.println(settings.formatMenuHeader("Starlink Filters"));
+        System.out.println(settings.formatMenuItem("1", "Filter by version"));
+        System.out.println(settings.formatMenuItem("2", "Filter by launch date"));
+        System.out.println(settings.formatMenuItem("3", "Both filters"));
 
         int choice = getValidChoice(1, 3);
+
+        System.out.println(settings.formatBoxedInfo("Configure Filters"));
         switch (choice) {
-            case 1:
-                query.put("version", getValidInput("Version (e.g., v1.0, v1.5): "));
-                break;
-            case 2:
-                query.put("launch_date", getValidInput("Launch date (YYYY-MM-DD): "));
-                break;
-            case 3:
-                query.put("version", getValidInput("Version (e.g., v1.0, v1.5): "));
-                query.put("launch_date", getValidInput("Launch date (YYYY-MM-DD): "));
-                break;
+            case 1 -> {
+                System.out.println(settings.formatHighlight("\nStarlink Versions:"));
+                System.out.println(settings.formatMenuItem("•", "v0.9   - Prototype satellites"));
+                System.out.println(settings.formatMenuItem("•", "v1.0   - First operational version"));
+                System.out.println(settings.formatMenuItem("•", "v1.5   - Enhanced bandwidth variant"));
+                System.out.println(settings.formatMenuItem("•", "v2.0   - Second generation satellites"));
+                String version = getValidInput(settings.formatPrompt("Version: "));
+                query.put("version", version);
+                System.out.println(settings.formatSuccess("Filter applied: version = " + version));
+            }
+            case 2 -> {
+                System.out.println(settings.formatHighlight("\nDate Format: YYYY-MM-DD"));
+                System.out.println(settings.formatMenuItem("•", "Example: 2020-01-30"));
+                System.out.println(settings.formatMenuItem("•", "Note: Must be a past or present date"));
+                String launchDate = getValidInput(settings.formatPrompt("Launch date: "));
+                query.put("launch_date", launchDate);
+                System.out.println(settings.formatSuccess("Filter applied: launch date = " + launchDate));
+            }
+            case 3 -> {
+                System.out.println(settings.formatHighlight("\nStarlink Versions:"));
+                System.out.println(settings.formatMenuItem("•", "v0.9   - Prototype satellites"));
+                System.out.println(settings.formatMenuItem("•", "v1.0   - First operational version"));
+                System.out.println(settings.formatMenuItem("•", "v1.5   - Enhanced bandwidth variant"));
+                System.out.println(settings.formatMenuItem("•", "v2.0   - Second generation satellites"));
+                String version = getValidInput(settings.formatPrompt("Version: "));
+
+                System.out.println(settings.formatHighlight("\nDate Format: YYYY-MM-DD"));
+                System.out.println(settings.formatMenuItem("•", "Example: 2020-01-30"));
+                System.out.println(settings.formatMenuItem("•", "Note: Must be a past or present date"));
+                String launchDate = getValidInput(settings.formatPrompt("Launch date: "));
+
+                query.put("version", version);
+                query.put("launch_date", launchDate);
+                System.out.println(settings.formatSuccess("Filters applied:"));
+                System.out.println(settings.formatHighlight("• Version: " + version));
+                System.out.println(settings.formatHighlight("• Launch date: " + launchDate));
+            }
         }
     }
 
     private void displayNoResultsFound(Category selectedCategory) {
-        System.out.println("\n┌──────────────────────────────────────┐");
-        System.out.println("│          No Results Found            │");
-        System.out.println("└──────────────────────────────────────┘");
-        System.out.println("\nPossible reasons:");
-        System.out.println("• Your filter criteria might be too restrictive");
-        System.out.println("• The combination of filters might not match any data");
-
-        System.out.println("\nSuggestions for " + selectedCategory.name() + ":");
-        switch (selectedCategory) {
-            case LAUNCHES:
-                System.out.println("• Try different success/upcoming combinations");
-                System.out.println("• Most launches are either upcoming or have a success status");
-                System.out.println("\nExample filters:");
-                System.out.println("1. success: true, upcoming: false  (Past successful launches)");
-                System.out.println("2. success: false, upcoming: false (Failed launches)");
-                System.out.println("3. upcoming: true                  (Future launches)");
-                break;
-            case ROCKETS:
-                System.out.println("• Common rocket types: 'v1.0', 'v1.1', 'v1.2'");
-                System.out.println("• Try checking active rockets (active: true)");
-                System.out.println("\nExample filters:");
-                System.out.println("1. active: true, type: v1.2       (Active Falcon 9 v1.2)");
-                System.out.println("2. active: false                  (Retired rockets)");
-                System.out.println("3. type: v1.0                     (Original Falcon 9)");
-                break;
-            case LAUNCHPADS:
-                System.out.println("• Available regions: Florida, Texas, California");
-                System.out.println("• Status can be 'active' or 'inactive'");
-                System.out.println("\nExample filters:");
-                System.out.println("1. status: active, region: Florida (Active Florida pads)");
-                System.out.println("2. region: Texas                   (All Texas facilities)");
-                System.out.println("3. status: inactive                (Retired launchpads)");
-                break;
-            case CREW:
-                System.out.println("• Common agencies: 'NASA', 'SpaceX'");
-                System.out.println("• Status is typically 'active' or 'inactive'");
-                System.out.println("\nExample filters:");
-                System.out.println("1. agency: NASA, status: active    (Active NASA astronauts)");
-                System.out.println("2. agency: SpaceX                  (All SpaceX crew)");
-                System.out.println("3. status: inactive                (Retired astronauts)");
-                break;
-            case CAPSULES:
-                System.out.println("• Types include: 'Dragon 1.0', 'Dragon 2.0'");
-                System.out.println("• Status can be 'active', 'retired', or 'unknown'");
-                System.out.println("\nExample filters:");
-                System.out.println("1. type: Dragon 2.0, status: active (Active Dragon 2 capsules)");
-                System.out.println("2. status: retired                  (All retired capsules)");
-                System.out.println("3. type: Dragon 1.0                 (All Dragon 1 capsules)");
-                break;
-            case STARLINK:
-                System.out.println("• Available versions: 'v1.0', 'v1.5'");
-                System.out.println("• Launch dates format: YYYY-MM-DD");
-                System.out.println("\nExample filters:");
-                System.out.println("1. version: v1.5                    (All v1.5 satellites)");
-                System.out.println("2. launch_date: 2020-01-01         (Satellites launched after 2020)");
-                System.out.println("3. version: v1.0, launch_date: 2019-05-24  (v1.0 satellites from specific launch)");
-                break;
-        }
-        System.out.println("\nTry modifying your filters and search again!");
+        System.out.println(settings.formatMenuHeader("No Results Found"));
+        System.out.println(settings.formatError("No matching results were found for your search criteria"));
+        
+        System.out.println(settings.formatMenuHeader("Possible Reasons"));
+        System.out.println(settings.formatMenuItem("•", "Your filter criteria might be too restrictive"));
+        System.out.println(settings.formatMenuItem("•", "The combination of filters might not match any data"));
+        System.out.println(settings.formatMenuItem("•", "The requested data might not exist in the database"));
+        
+        System.out.println(settings.formatMenuHeader("Suggestions"));
+        System.out.println(settings.formatMenuItem("•", "Try broadening your search criteria"));
+        System.out.println(settings.formatMenuItem("•", "Check if the values are correctly formatted"));
+        System.out.println(settings.formatMenuItem("•", "Try using fewer filters"));
     }
 
     private void displaySelectedFields(Category category, JSONObject result) {
-        String[] availableFields;
-
-        // Define available fields based on category
-        switch (category) {
-            case LAUNCHES:
-                availableFields = new String[]{"name", "flight_number", "date_utc", "success", "details", "links", "id"};
-                System.out.println("\nAvailable Launch fields:");
-                System.out.println("1. Name (Launch name)");
-                System.out.println("2. Flight Number");
-                System.out.println("3. Date");
-                System.out.println("4. Success Status");
-                System.out.println("5. Details");
-                System.out.println("6. Wikipedia Link");
-                System.out.println("7. ID");
-                break;
-            case ROCKETS:
-                availableFields = new String[]{"name", "type", "active", "description", "height", "wikipedia", "id"};
-                System.out.println("\nAvailable Rocket fields:");
-                System.out.println("1. Name");
-                System.out.println("2. Type");
-                System.out.println("3. Active Status");
-                System.out.println("4. Description");
-                System.out.println("5. Height");
-                System.out.println("6. Wikipedia Link");
-                System.out.println("7. ID");
-                break;
-            case LAUNCHPADS:
-                availableFields = new String[]{"name", "full_name", "region", "status", "details", "id"};
-                System.out.println("\nAvailable Launchpad fields:");
-                System.out.println("1. Name");
-                System.out.println("2. Full Name");
-                System.out.println("3. Region");
-                System.out.println("4. Status");
-                System.out.println("5. Details");
-                System.out.println("6. ID");
-                break;
-            case CREW:
-                availableFields = new String[]{"name", "agency", "status", "launches", "wikipedia", "id"};
-                System.out.println("\nAvailable Crew fields:");
-                System.out.println("1. Name");
-                System.out.println("2. Agency");
-                System.out.println("3. Status");
-                System.out.println("4. Launches");
-                System.out.println("5. Wikipedia Link");
-                System.out.println("6. ID");
-                break;
-            case CAPSULES:
-                availableFields = new String[]{"serial", "type", "status", "launches", "last_update", "id"};
-                System.out.println("\nAvailable Capsule fields:");
-                System.out.println("1. Serial Number");
-                System.out.println("2. Type");
-                System.out.println("3. Status");
-                System.out.println("4. Launches");
-                System.out.println("5. Last Update");
-                System.out.println("6. ID");
-                break;
-            case STARLINK:
-                availableFields = new String[]{"version", "launch_date", "longitude", "latitude", "height_km", "velocity_kms", "id"};
-                System.out.println("\nAvailable Starlink fields:");
-                System.out.println("1. Version");
-                System.out.println("2. Launch Date");
-                System.out.println("3. Longitude");
-                System.out.println("4. Latitude");
-                System.out.println("5. Height (km)");
-                System.out.println("6. Velocity (km/s)");
-                System.out.println("7. ID");
-                break;
-            default:
-                return;
+        JSONArray docs = result.getJSONArray("docs");
+        
+        if (docs.length() == 0) {
+            System.out.println(settings.formatError("No matching records found"));
+            return;
         }
 
-        // Get user's field selections
-        System.out.println("\nSelect fields to display (enter numbers separated by spaces)");
-        System.out.println("Example: '1 3 4' to show fields 1, 3, and 4");
-        System.out.print("Enter your selection: ");
+        // Define available fields based on category
+        String[] availableFields;
+        switch (category) {
+            case LAUNCHES -> availableFields = new String[]{"name", "flight_number", "date_utc", "success", "details", "links", "id"};
+            case ROCKETS -> availableFields = new String[]{"name", "type", "active", "description", "height", "wikipedia", "id"};
+            case LAUNCHPADS -> availableFields = new String[]{"name", "full_name", "region", "status", "details", "id"};
+            case CREW -> availableFields = new String[]{"name", "agency", "status", "launches", "wikipedia", "id"};
+            case CAPSULES -> availableFields = new String[]{"serial", "status", "type", "last_update", "launches", "id"};
+            case STARLINK -> availableFields = new String[]{"version", "launch_date", "longitude", "latitude", "height_km", "velocity_kms", "id"};
+            default -> availableFields = new String[]{};
+        }
 
-        String[] selections = scanner.nextLine().trim().split("\\s+");
-        JSONArray docs = result.getJSONArray("docs");
+        while (true) {
+            // Display available fields
+            System.out.println(settings.formatMenuHeader("Available Fields"));
+            for (int i = 0; i < availableFields.length; i++) {
+                String fieldName = availableFields[i];
+                String displayName = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1).replace("_", " ");
+                System.out.println(settings.formatMenuItem((i + 1) + "", displayName));
+            }
 
-        // Display selected fields for each document
-        System.out.println("\n=== Selected Fields Results ===");
-        for (int i = 0; i < docs.length(); i++) {
-            JSONObject doc = docs.getJSONObject(i);
-            System.out.println("\nResult " + (i + 1) + ":");
-            System.out.println("------------------------");
-
+            // Get user's field selections
+            System.out.print(settings.formatPrompt("Select fields to display (enter numbers separated by spaces): "));
+            String[] selections = scanner.nextLine().trim().split("\\s+");
+            
+            // Validate all selections before processing
+            boolean hasInvalidSelection = false;
             for (String selection : selections) {
                 try {
                     int fieldIndex = Integer.parseInt(selection) - 1;
-                    if (fieldIndex >= 0 && fieldIndex < availableFields.length) {
-                        String fieldName = availableFields[fieldIndex];
-                        String displayName = fieldName.substring(0, 1).toUpperCase() +
-                                fieldName.substring(1).replace("_", " ");
-
-                        // Special handling for links in launches
-                        if (category == Category.LAUNCHES && fieldName.equals("links")) {
-                            JSONObject links = doc.getJSONObject("links");
-                            String wikiLink = links.optString("wikipedia", "N/A");
-                            System.out.println("Wikipedia Link: " + wikiLink);
-                        }
-                        // Regular fields
-                        else {
-                            Object value = doc.has(fieldName) ? doc.get(fieldName) : "N/A";
-                            System.out.println(displayName + ": " + value);
-                        }
+                    if (fieldIndex < 0 || fieldIndex >= availableFields.length) {
+                        System.out.println(settings.formatError("Invalid selection: " + selection));
+                        System.out.println(settings.formatHighlight("Please enter numbers between 1 and " + availableFields.length));
+                        hasInvalidSelection = true;
+                        break;
                     }
                 } catch (NumberFormatException e) {
-                    System.out.println("Invalid selection: " + selection);
+                    System.out.println(settings.formatError("Invalid input: '" + selection + "' is not a number"));
+                    System.out.println(settings.formatHighlight("Please enter valid numbers separated by spaces"));
+                    hasInvalidSelection = true;
+                    break;
                 }
             }
+
+            // If any selection was invalid, continue the loop
+            if (hasInvalidSelection) {
+                System.out.println();  // Add blank line for readability
+                continue;
+            }
+
+            // Process and display results
+            System.out.println(settings.formatMenuHeader("Results"));
+            for (int i = 0; i < docs.length(); i++) {
+                JSONObject doc = docs.getJSONObject(i);
+                
+                for (String selection : selections) {
+                    int fieldIndex = Integer.parseInt(selection) - 1;
+                    String fieldName = availableFields[fieldIndex];
+                    String displayName = fieldName.substring(0, 1).toUpperCase() +
+                            fieldName.substring(1).replace("_", " ");
+
+                    // Special handling for links in launches
+                    if (category == Category.LAUNCHES && fieldName.equals("links")) {
+                        JSONObject links = doc.getJSONObject("links");
+                        String wikiLink = links.optString("wikipedia", "N/A");
+                        System.out.println(settings.formatMenuItem("Wikipedia Link", wikiLink));
+                    }
+                    // Regular fields
+                    else {
+                        Object value = doc.has(fieldName) ? doc.get(fieldName) : "N/A";
+                        System.out.println(settings.formatMenuItem(displayName, value.toString()));
+                    }
+                }
+                
+                // Add separator between results if not the last one
+                if (i < docs.length() - 1) {
+                    System.out.println(settings.formatHighlight("─".repeat(50)));
+                }
+            }
+            
+            // Break the loop after successful display
+            break;
         }
     }
 
@@ -553,16 +653,27 @@ public class Filter extends apiCalls {
         Category selectedCategory = selectCategory();
         if (selectedCategory != null) {
             try {
-                System.out.println("\n=== Find " + selectedCategory.name() + " by ID ===");
-                String id = getValidInput("Enter ID: ");
+                System.out.println(settings.formatMenuHeader("Find " + selectedCategory.name() + " by ID"));
+                
+                // Display ID format example based on category
+                System.out.println(settings.formatHighlight("ID Format Example:"));
+                switch (selectedCategory) {
+                    case LAUNCHES -> System.out.println(settings.formatMenuItem("•", "5eb87cd9ffd86e000604b32a"));
+                    case ROCKETS -> System.out.println(settings.formatMenuItem("•", "5e9d0d95eda69955f709d1eb"));
+                    case LAUNCHPADS -> System.out.println(settings.formatMenuItem("•", "5e9e4501f509094ba4566f84"));
+                    case CREW -> System.out.println(settings.formatMenuItem("•", "5ebf1a6e23a9a60006e03a7a"));
+                    case CAPSULES -> System.out.println(settings.formatMenuItem("•", "5e9e2c5bf35918ed873b2664"));
+                    case STARLINK -> System.out.println(settings.formatMenuItem("•", "5eed770f096e59000698560d"));
+                }
+
+                String id = getValidInput(settings.formatPrompt("Enter ID: "));
 
                 try {
                     JSONObject result = getItemById(selectedCategory, id);
-                    System.out.println("\n=== Found " + selectedCategory.name() + " ===");
-                    System.out.println("How would you like to view the result?");
-                    System.out.println("1. Select specific fields to display");
-                    System.out.println("2. Show all information");
-                    System.out.print("Enter your choice (1-2): ");
+                    System.out.println(settings.formatMenuHeader("View Options"));
+                    System.out.println(settings.formatMenuItem("1", "Select specific fields to display"));
+                    System.out.println(settings.formatMenuItem("2", "Show all information"));
+                    System.out.print(settings.formatPrompt("Enter your choice (1-2): "));
 
                     if (scanner.hasNextInt()) {
                         int choice = scanner.nextInt();
@@ -577,42 +688,21 @@ public class Filter extends apiCalls {
                         if (choice == 1) {
                             displaySelectedFields(selectedCategory, formattedResult);
                         } else {
-                            System.out.println("\n=== Complete Information ===");
+                            System.out.println(settings.formatMenuHeader("Complete Information"));
                             displayAllInformation(selectedCategory, formattedResult);
                         }
                     }
                 } catch (Exception e) {
-                    System.out.println("\n┌──────────────────────────────────────┐");
-                    System.out.println("│          Item Not Found              │");
-                    System.out.println("└──────────────────────────────────────┘");
-                    System.out.println("\nPossible reasons:");
-                    System.out.println("• The ID might be incorrect");
-                    System.out.println("• The item might have been deleted or moved");
-                    System.out.println("\nSuggestions:");
-                    System.out.println("• Double-check the ID");
-                    System.out.println("• Try searching with filters instead");
-
-                    switch (selectedCategory) {
-                        case LAUNCHES:
-                            System.out.println("\nExample Launch ID format: 5eb87cd9ffd86e000604b32a");
-                            break;
-                        case ROCKETS:
-                            System.out.println("\nExample Rocket ID format: 5e9d0d95eda69955f709d1eb");
-                            break;
-                        case LAUNCHPADS:
-                            System.out.println("\nExample Launchpad ID format: 5e9e4501f509094ba4566f84");
-                            break;
-                        case CREW:
-                            System.out.println("\nExample Crew ID format: 5ebf1a6e23a9a60006e03a7a");
-                            break;
-                        case CAPSULES:
-                            System.out.println("\nExample Capsule ID format: 5e9e2c5bf35918ed873b2664");
-                            break;
-                    }
+                    System.out.println(settings.formatError("Item not found"));
+                    System.out.println(settings.formatMenuHeader("Troubleshooting"));
+                    System.out.println(settings.formatMenuItem("•", "Check if the ID is correct"));
+                    System.out.println(settings.formatMenuItem("•", "Verify the ID format"));
+                    System.out.println(settings.formatMenuItem("•", "Make sure the item exists"));
                 }
             } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                System.out.println(settings.formatError("Error: " + e.getMessage()));
             }
+            returnToMainMenu();
         }
     }
 
@@ -621,9 +711,31 @@ public class Filter extends apiCalls {
         List<DTO> dtoList = DTO.fromJSONArray(docs, category);
 
         for (int i = 0; i < dtoList.size(); i++) {
-            System.out.println("\nResult " + (i + 1) + ":");
-            System.out.println(dtoList.get(i).displayAllInformation(category));
+            System.out.println(settings.formatMenuHeader("Result " + (i + 1)));
+            
+            // Split the information into lines and format each line
+            String[] lines = dtoList.get(i).displayAllInformation(category).split("\n");
+            for (String line : lines) {
+                if (line.contains(":")) {
+                    String[] parts = line.split(":", 2);
+                    System.out.println(settings.formatMenuItem(parts[0].trim(), parts[1].trim()));
+                } else {
+                    System.out.println(settings.formatHighlight(line));
+                }
+            }
+            
+            // Add separator between results if not the last one
+            if (i < dtoList.size() - 1) {
+                System.out.println(settings.formatHighlight("─".repeat(50)));
+            }
         }
     }
+
+    private void displayOperationComplete() {
+        System.out.println(settings.formatMenuHeader("Operation Complete"));
+        System.out.println(settings.formatSuccess("Data retrieval successful"));
+        System.out.println(settings.formatHighlight("─".repeat(50)));
+    }
 }
+
 
