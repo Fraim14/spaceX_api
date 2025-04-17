@@ -232,4 +232,43 @@ public class DTO extends apiCalls {
         }
         return dtoList;
     }
+
+    public String displayCompactInformation(Category category) {
+        StringBuilder display = new StringBuilder();
+        Settings settings = Settings.getInstance();
+        String dateFormat = settings.getDateFormat();
+
+        switch (category) {
+            case LAUNCHES:
+                display.append("Name: ").append(name)
+                        .append(" | Date: ").append(formatDate(dateUtc, dateFormat))
+                        .append(" | Success: ").append(success);
+                break;
+            case ROCKETS:
+                display.append("Name: ").append(name)
+                        .append(" | Type: ").append(type)
+                        .append(" | Active: ").append(active);
+                break;
+            case LAUNCHPADS:
+                display.append("Name: ").append(name)
+                        .append(" | Region: ").append(region)
+                        .append(" | Status: ").append(status);
+                break;
+            // Add cases for other categories...
+        }
+        return display.toString();
+    }
+
+    private String formatDate(String dateStr, String format) {
+        if (dateStr == null) return "N/A";
+        // Implement date formatting based on UTC or Local setting
+        // You'll need to add actual date formatting logic here
+        return format.equals("UTC") ? dateStr : convertToLocalTime(dateStr);
+    }
+
+    private String convertToLocalTime(String utcDate) {
+        // Implement conversion from UTC to local time
+        // You'll need to add actual conversion logic here
+        return utcDate; // Placeholder
+    }
 }
