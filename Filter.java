@@ -1,4 +1,5 @@
 // Maksym Shtymak 3151565
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,7 +9,7 @@ import java.util.Scanner;
 public class Filter extends apiCalls {
     private final Scanner scanner = new Scanner(System.in);
     private final Settings settings = Settings.getInstance();
-    private String emoji = settings.getShowEmoji() ? "📄 " : "";
+    private final Cache cache = new Cache();
     private String colorStart = settings.getColoredOutput() ? "\u001B[36m" : ""; // Cyan color
     private String colorEnd = settings.getColoredOutput() ? "\u001B[0m" : "";
 
@@ -19,12 +20,21 @@ public class Filter extends apiCalls {
         String choice = scanner.nextLine().trim().toLowerCase();
         if (choice.equals("y") || choice.equals("yes")) {
             menu.displayMenu();
-        } else if(choice.equals("n") || choice.equals("no")){
+        } else if (choice.equals("n") || choice.equals("no")) {
             System.out.println(settings.formatSuccess("Exiting program. Goodbye!"));
-        }else {
+        } else {
             System.out.println(settings.formatError("Invalid choice: " + choice));
             System.out.println(settings.formatHighlight("Please enter either 'y' or 'n'"));
             returnToMainMenu();
+        }
+    }
+
+    private JSONObject executeQuery(Category category, JSONObject filters) {
+        try {
+            return queryCategory(category, filters);
+        } catch (Exception e) {
+            System.out.println(settings.formatWarning("Cannot connect to the API. Checking cache..."));
+            return cache.handleCachedResult(category.name(), "filter");
         }
     }
 
@@ -32,48 +42,59 @@ public class Filter extends apiCalls {
         Category selectedCategory = selectCategory();
         if (selectedCategory != null) {
             JSONObject filters = createFilters(selectedCategory);
+            JSONObject result = executeInitialQuery(selectedCategory, filters);
 
-            try {
-                JSONObject initialResult = queryCategory(selectedCategory, filters);
-                int totalAvailable = initialResult.getInt("totalDocs");
-
-                System.out.println(settings.formatMenuHeader("Search Results"));
-                System.out.println(settings.formatHighlight("Total available results: " + totalAvailable));
-
-                if (totalAvailable == 0) {
-                    displayNoResultsFound(selectedCategory);
-                    returnToMainMenu();
-                    return;
-                }
-
-                int limit = selectLimit(totalAvailable);
-                if (limit > 0) {
-                    JSONObject options = new JSONObject();
-                    options.put("limit", limit);
-                    filters.put("options", options);
-                    initialResult = queryCategory(selectedCategory, filters);
-                }
-
-                System.out.println(settings.formatMenuHeader("View Options"));
-                System.out.println(settings.formatMenuItem("1", "Select specific fields to display"));
-                System.out.println(settings.formatMenuItem("2", "Show all information"));
-                System.out.print(settings.formatPrompt("Enter your choice (1-2): "));
-
-                if (scanner.hasNextInt()) {
-                    int choice = scanner.nextInt();
-                    scanner.nextLine(); // Clear buffer
-
-                    if (choice == 1) {
-                        displaySelectedFields(selectedCategory, initialResult);
-                    } else {
-                        System.out.println(settings.formatMenuHeader("Complete Results"));
-                        displayAllInformation(selectedCategory, initialResult);
-                    }
-                }
-            } catch (Exception e) {
-                System.out.println(settings.formatError("Error: " + e.getMessage()));
+            if (result != null) {
+                displayAndProcessResults(selectedCategory, result);
             }
             returnToMainMenu();
+        }
+    }
+
+    private JSONObject executeInitialQuery(Category selectedCategory, JSONObject filters) {
+        try {
+            JSONObject result = queryCategory(selectedCategory, filters);
+            int totalAvailable = result.getInt("totalDocs");
+
+            if (totalAvailable == 0) {
+                displayNoResultsFound(selectedCategory);
+                return null;
+            }
+
+            System.out.println(settings.formatMenuHeader("Search Results"));
+            System.out.println(settings.formatHighlight("Total available results: " + totalAvailable));
+
+            int limit = selectLimit(totalAvailable);
+            if (limit > 0) {
+                JSONObject options = new JSONObject();
+                options.put("limit", limit);
+                filters.put("options", options);
+                result = queryCategory(selectedCategory, filters);
+                cache.saveOperation(selectedCategory.name(), "filter", result);
+            }
+            return result;
+        } catch (Exception e) {
+            System.out.println(settings.formatWarning("Cannot connect to the API. Checking cache..."));
+            return cache.handleCachedResult(selectedCategory.name(), "filter");
+        }
+    }
+
+    private void displayAndProcessResults(Category selectedCategory, JSONObject result) {
+        System.out.println(settings.formatMenuHeader("View Options"));
+        System.out.println(settings.formatMenuItem("1", "Select specific fields to display"));
+        System.out.println(settings.formatMenuItem("2", "Show all information"));
+        System.out.print(settings.formatPrompt("Enter your choice (1-2): "));
+
+        if (scanner.hasNextInt()) {
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Clear buffer
+
+            if (choice == 1) {
+                displaySelectedFields(selectedCategory, result);
+            } else {
+                System.out.println(settings.formatMenuHeader("Complete Results"));
+                displayAllInformation(selectedCategory, result);
+            }
         }
     }
 
@@ -87,7 +108,7 @@ public class Filter extends apiCalls {
                 System.out.println(settings.formatMenuItem("4", "Crew"));
                 System.out.println(settings.formatMenuItem("5", "Capsules"));
                 System.out.println(settings.formatMenuItem("6", "Starlinks"));
-                
+
                 System.out.print("\n" + settings.formatPrompt("Enter your choice (1-6): "));
                 if (!scanner.hasNextInt()) {
                     System.out.println("Please enter a valid number.");
@@ -126,13 +147,13 @@ public class Filter extends apiCalls {
             System.out.println(settings.formatMenuHeader("Select Number of Results"));
             System.out.println(settings.formatMenuItem("1", "Show all results"));
             System.out.println(settings.formatMenuItem("2", "Specify number of results"));
-            
+
             // Format the maximum available results line using Settings methods
             String maxResults = String.format("Maximum available results: %d", totalAvailable);
             System.out.println(settings.formatBoxedInfo(maxResults));
 
             System.out.print("\n" + settings.formatPrompt("Enter your choice (1-2): "));
-            
+
             if (!scanner.hasNextInt()) {
                 String invalidInput = scanner.nextLine();
                 System.out.println(settings.formatError("Invalid input: '" + invalidInput + "'"));
@@ -250,9 +271,9 @@ public class Filter extends apiCalls {
         System.out.println(settings.formatMenuItem("1", "Filter by success"));
         System.out.println(settings.formatMenuItem("2", "Filter by upcoming"));
         System.out.println(settings.formatMenuItem("3", "Both filters"));
-        
+
         int choice = getValidChoice(1, 3);
-        
+
         System.out.println(settings.formatBoxedInfo("Configure Filters"));
         switch (choice) {
             case 1 -> {
@@ -361,7 +382,7 @@ public class Filter extends apiCalls {
                 System.out.println(settings.formatMenuItem("•", "active   - Currently operational"));
                 System.out.println(settings.formatMenuItem("•", "inactive - Not in use"));
                 String status = getValidInput(settings.formatPrompt("Status (active/inactive): "));
-                
+
                 System.out.println(settings.formatMenuHeader("Available Regions"));
                 System.out.println(settings.formatMenuItem("•", "Florida"));
                 System.out.println(settings.formatHighlight("  ↳ Cape Canaveral"));
@@ -372,7 +393,7 @@ public class Filter extends apiCalls {
                 System.out.println(settings.formatMenuItem("•", "California"));
                 System.out.println(settings.formatHighlight("  ↳ Vandenberg"));
                 String region = getValidInput(settings.formatPrompt("Region: "));
-                
+
                 query.put("status", status);
                 query.put("region", region);
                 System.out.println(settings.formatSuccess("Filters applied:"));
@@ -544,12 +565,12 @@ public class Filter extends apiCalls {
     private void displayNoResultsFound(Category selectedCategory) {
         System.out.println(settings.formatMenuHeader("No Results Found"));
         System.out.println(settings.formatError("No matching results were found for your search criteria"));
-        
+
         System.out.println(settings.formatMenuHeader("Possible Reasons"));
         System.out.println(settings.formatMenuItem("•", "Your filter criteria might be too restrictive"));
         System.out.println(settings.formatMenuItem("•", "The combination of filters might not match any data"));
         System.out.println(settings.formatMenuItem("•", "The requested data might not exist in the database"));
-        
+
         System.out.println(settings.formatMenuHeader("Suggestions"));
         System.out.println(settings.formatMenuItem("•", "Try broadening your search criteria"));
         System.out.println(settings.formatMenuItem("•", "Check if the values are correctly formatted"));
@@ -558,7 +579,7 @@ public class Filter extends apiCalls {
 
     private void displaySelectedFields(Category category, JSONObject result) {
         JSONArray docs = result.getJSONArray("docs");
-        
+
         if (docs.length() == 0) {
             System.out.println(settings.formatError("No matching records found"));
             return;
@@ -567,12 +588,16 @@ public class Filter extends apiCalls {
         // Define available fields based on category
         String[] availableFields;
         switch (category) {
-            case LAUNCHES -> availableFields = new String[]{"name", "flight_number", "date_utc", "success", "details", "links", "id"};
-            case ROCKETS -> availableFields = new String[]{"name", "type", "active", "description", "height", "wikipedia", "id"};
+            case LAUNCHES ->
+                    availableFields = new String[]{"name", "flight_number", "date_utc", "success", "details", "links", "id"};
+            case ROCKETS ->
+                    availableFields = new String[]{"name", "type", "active", "description", "height", "wikipedia", "id"};
             case LAUNCHPADS -> availableFields = new String[]{"name", "full_name", "region", "status", "details", "id"};
             case CREW -> availableFields = new String[]{"name", "agency", "status", "launches", "wikipedia", "id"};
-            case CAPSULES -> availableFields = new String[]{"serial", "status", "type", "last_update", "launches", "id"};
-            case STARLINK -> availableFields = new String[]{"version", "launch_date", "longitude", "latitude", "height_km", "velocity_kms", "id"};
+            case CAPSULES ->
+                    availableFields = new String[]{"serial", "status", "type", "last_update", "launches", "id"};
+            case STARLINK ->
+                    availableFields = new String[]{"version", "launch_date", "longitude", "latitude", "height_km", "velocity_kms", "id"};
             default -> availableFields = new String[]{};
         }
 
@@ -588,7 +613,7 @@ public class Filter extends apiCalls {
             // Get user's field selections
             System.out.print(settings.formatPrompt("Select fields to display (enter numbers separated by spaces): "));
             String[] selections = scanner.nextLine().trim().split("\\s+");
-            
+
             // Validate all selections before processing
             boolean hasInvalidSelection = false;
             for (String selection : selections) {
@@ -618,7 +643,7 @@ public class Filter extends apiCalls {
             System.out.println(settings.formatMenuHeader("Results"));
             for (int i = 0; i < docs.length(); i++) {
                 JSONObject doc = docs.getJSONObject(i);
-                
+
                 for (String selection : selections) {
                     int fieldIndex = Integer.parseInt(selection) - 1;
                     String fieldName = availableFields[fieldIndex];
@@ -637,13 +662,13 @@ public class Filter extends apiCalls {
                         System.out.println(settings.formatMenuItem(displayName, value.toString()));
                     }
                 }
-                
+
                 // Add separator between results if not the last one
                 if (i < docs.length() - 1) {
                     System.out.println(settings.formatHighlight("─".repeat(50)));
                 }
             }
-            
+
             // Break the loop after successful display
             break;
         }
@@ -654,7 +679,7 @@ public class Filter extends apiCalls {
         if (selectedCategory != null) {
             try {
                 System.out.println(settings.formatMenuHeader("Find " + selectedCategory.name() + " by ID"));
-                
+
                 // Display ID format example based on category
                 System.out.println(settings.formatHighlight("ID Format Example:"));
                 switch (selectedCategory) {
@@ -712,7 +737,7 @@ public class Filter extends apiCalls {
 
         for (int i = 0; i < dtoList.size(); i++) {
             System.out.println(settings.formatMenuHeader("Result " + (i + 1)));
-            
+
             // Split the information into lines and format each line
             String[] lines = dtoList.get(i).displayAllInformation(category).split("\n");
             for (String line : lines) {
@@ -723,7 +748,7 @@ public class Filter extends apiCalls {
                     System.out.println(settings.formatHighlight(line));
                 }
             }
-            
+
             // Add separator between results if not the last one
             if (i < dtoList.size() - 1) {
                 System.out.println(settings.formatHighlight("─".repeat(50)));

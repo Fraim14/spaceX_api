@@ -13,8 +13,7 @@ public class Menu {
         System.out.println(settings.formatMenuHeader("Space-X API Menu"));
         System.out.println(settings.formatMenuItem("1", "Select what you want to find"));
         System.out.println(settings.formatMenuItem("2", "Settings"));
-        System.out.println(settings.formatMenuItem("3", "Cache"));
-        System.out.println(settings.formatMenuItem("4", "Exit"));
+        System.out.println(settings.formatMenuItem("3", "Exit"));
         System.out.print("\n" + settings.formatPrompt("Enter your choice: "));
     }
 
@@ -30,13 +29,11 @@ public class Menu {
                     displaySettingsMenu();
                     break;
                 case "3":
-                    break;
-                case "4":
                     System.out.println(settings.formatSuccess("Exiting program. Goodbye!"));
                     System.exit(0);
                     break;
                 default:
-                    System.out.println(settings.formatError("Invalid input. Please enter a number between 1 and 4."));
+                    System.out.println(settings.formatError("Invalid input. Please enter a number between 1 and 3."));
                     menuOptions();
                     break;
             }
@@ -47,19 +44,16 @@ public class Menu {
         while (true) {
             System.out.println(settings.formatMenuHeader("Settings"));
             System.out.println(settings.formatHighlight("Current Settings:"));
-            System.out.println(settings.formatMenuItem("Colored Output", 
-                settings.getColoredOutput() ? settings.formatSuccess("Enabled") : settings.formatError("Disabled")));
+            System.out.println(settings.formatMenuItem("Colored Output",
+                    settings.getColoredOutput() ? settings.formatSuccess("Enabled") : settings.formatError("Disabled")));
             System.out.println(settings.formatMenuItem("Date Format", settings.formatHighlight(settings.getDateFormat())));
-            System.out.println(settings.formatMenuItem("Show Emoji", 
-                settings.getShowEmoji() ? settings.formatSuccess("Enabled") : settings.formatError("Disabled")));
-            
+
             System.out.println(settings.formatHighlight("\nOptions:"));
             System.out.println(settings.formatMenuItem("1", "Toggle Colored Output"));
             System.out.println(settings.formatMenuItem("2", "Change Date Format"));
-            System.out.println(settings.formatMenuItem("3", "Toggle Emoji"));
-            System.out.println(settings.formatMenuItem("4", "Back to Main Menu"));
-            
-            System.out.print(settings.formatPrompt("Enter your choice (1-4): "));
+            System.out.println(settings.formatMenuItem("3", "Back to Main Menu"));
+
+            System.out.print(settings.formatPrompt("Enter your choice (1-3): "));
 
             String input = scanner.nextLine();
             switch (input) {
@@ -70,12 +64,10 @@ public class Menu {
                     changeDateFormat();
                     break;
                 case "3":
-                    toggleEmoji();
+                    displayMenu();
                     break;
-                case "4":
-                    return;
                 default:
-                    System.out.println(settings.formatError("Invalid input. Please enter a number between 1 and 4."));
+                    System.out.println(settings.formatError("Invalid input. Please enter a number between 1 and 3."));
                     System.out.println(settings.formatPrompt("\nPlease select an option:"));
             }
         }
@@ -93,9 +85,9 @@ public class Menu {
             System.out.println(settings.formatMenuItem("1", "UTC"));
             System.out.println(settings.formatMenuItem("2", "Local"));
             System.out.println(settings.formatMenuItem("3", "Back to Settings"));
-            
+
             System.out.print(settings.formatPrompt("Enter your choice (1-3): "));
-            
+
             String input = scanner.nextLine();
             switch (input) {
                 case "1":
@@ -115,11 +107,7 @@ public class Menu {
         }
     }
 
-    private void toggleEmoji() {
-        boolean current = settings.getShowEmoji();
-        settings.setShowEmoji(!current);
-        System.out.println(settings.formatSuccess("Emoji display: " + (!current ? "Enabled" : "Disabled")));
-    }
+    // toggleEmoji method removed
 
     public void displayFilterMenu() {
         System.out.println(settings.formatHeader("Search Options"));
@@ -129,7 +117,7 @@ public class Menu {
     }
 
     public void castFilterMenu() {
-        while(true) {
+        while (true) {
             String input = scanner.nextLine();
             switch (input) {
                 case "1":

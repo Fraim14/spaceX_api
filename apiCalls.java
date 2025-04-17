@@ -98,10 +98,6 @@ public class apiCalls {
     }
 
 
-    public JSONObject getCategory(Category category) throws Exception {
-        return get(category.getEndpoint());
-    }
-
     public JSONObject getItemById(Category category, String id) throws Exception {
         return get(category.getEndpoint() + "/" + id);
     }

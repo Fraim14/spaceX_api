@@ -50,8 +50,6 @@ public class Settings {
         JSONObject display = new JSONObject();
         display.put("coloredOutput", true);
         display.put("dateFormat", "UTC");
-        display.put("showEmoji", true);
-
         settings.put("display", display);
         saveSettings();
     }
@@ -72,10 +70,6 @@ public class Settings {
         return settings.getJSONObject("display").getString("dateFormat");
     }
 
-    public boolean getShowEmoji() {
-        return settings.getJSONObject("display").getBoolean("showEmoji");
-    }
-
     public void setColoredOutput(boolean enabled) {
         settings.getJSONObject("display").put("coloredOutput", enabled);
         saveSettings();
@@ -86,20 +80,15 @@ public class Settings {
         saveSettings();
     }
 
-    public void setShowEmoji(boolean enabled) {
-        settings.getJSONObject("display").put("showEmoji", enabled);
-        saveSettings();
-    }
-
     public String formatHeader(String text) {
         if (!getColoredOutput()) {
             return "\n┌─" + "─".repeat(text.length() + 2) + "─┐\n" +
-                   "│ " + text + " │\n" +
-                   "└─" + "─".repeat(text.length() + 2) + "─┘";
+                    "│ " + text + " │\n" +
+                    "└─" + "─".repeat(text.length() + 2) + "─┘";
         }
         return CYAN + "\n┌─" + "─".repeat(text.length() + 2) + "─┐\n" +
-               "│ " + text + " │\n" +
-               "└─" + "─".repeat(text.length() + 2) + "─┘" + RESET;
+                "│ " + text + " │\n" +
+                "└─" + "─".repeat(text.length() + 2) + "─┘" + RESET;
     }
 
     public String formatSuccess(String text) {
@@ -131,8 +120,8 @@ public class Settings {
         }
         String line = "═".repeat(title.length() + 6);
         return "\n" + CYAN + line + "\n" +
-               "  " + WHITE_BOLD + title + CYAN + "  \n" +
-               line + RESET;
+                "  " + WHITE_BOLD + title + CYAN + "  \n" +
+                line + RESET;
     }
 
     public String formatPrompt(String text) {
@@ -144,8 +133,8 @@ public class Settings {
             return "\n=== " + text + " ===";
         }
         return CYAN + "\n┌─" + "─".repeat(text.length()) + "─┐\n" +
-               "│ " + WHITE_BOLD + text + CYAN + " │\n" +
-               "└─" + "─".repeat(text.length()) + "─┘" + RESET;
+                "│ " + WHITE_BOLD + text + CYAN + " │\n" +
+                "└─" + "─".repeat(text.length()) + "─┘" + RESET;
     }
 }
 

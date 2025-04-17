@@ -241,18 +241,18 @@ public class DTO extends apiCalls {
         switch (category) {
             case LAUNCHES:
                 display.append("Name: ").append(name)
-                      .append(" | Date: ").append(formatDate(dateUtc, dateFormat))
-                      .append(" | Success: ").append(success);
+                        .append(" | Date: ").append(formatDate(dateUtc, dateFormat))
+                        .append(" | Success: ").append(success);
                 break;
             case ROCKETS:
                 display.append("Name: ").append(name)
-                      .append(" | Type: ").append(type)
-                      .append(" | Active: ").append(active);
+                        .append(" | Type: ").append(type)
+                        .append(" | Active: ").append(active);
                 break;
             case LAUNCHPADS:
                 display.append("Name: ").append(name)
-                      .append(" | Region: ").append(region)
-                      .append(" | Status: ").append(status);
+                        .append(" | Region: ").append(region)
+                        .append(" | Status: ").append(status);
                 break;
             // Add cases for other categories...
         }
