@@ -10,52 +10,48 @@ public class Filter extends apiCalls {
     private final Scanner scanner = new Scanner(System.in);
     private final Settings settings = Settings.getInstance();
     private final Cache cache = new Cache();
-    private String colorStart = settings.getColoredOutput() ? "\u001B[36m" : ""; // Cyan color
-    private String colorEnd = settings.getColoredOutput() ? "\u001B[0m" : "";
 
 
+    // this method is used to return to the main menu
     private void returnToMainMenu() {
         Menu menu = new Menu();
+        // the user is asked if they want to leave the menu
         System.out.print(settings.formatPrompt("Return to main menu? (y/n): "));
         String choice = scanner.nextLine().trim().toLowerCase();
         if (choice.equals("y") || choice.equals("yes")) {
             menu.displayMenu();
         } else if (choice.equals("n") || choice.equals("no")) {
             System.out.println(settings.formatSuccess("Exiting program. Goodbye!"));
+            System.exit(0);
         } else {
             System.out.println(settings.formatError("Invalid choice: " + choice));
             System.out.println(settings.formatHighlight("Please enter either 'y' or 'n'"));
             returnToMainMenu();
         }
     }
-
-    private JSONObject executeQuery(Category category, JSONObject filters) {
-        try {
-            return queryCategory(category, filters);
-        } catch (Exception e) {
-            System.out.println(settings.formatWarning("Cannot connect to the API. Checking cache..."));
-            return cache.handleCachedResult(category.name(), "filter");
-        }
-    }
-
+    // this method is used to filter the data
     public void filterData() {
+        // the category is selected by the user and the filters are created for the selected category
         Category selectedCategory = selectCategory();
+        // if the category is not null the filter is created and the filtering is executed
         if (selectedCategory != null) {
             JSONObject filters = createFilters(selectedCategory);
             JSONObject result = executeInitialQuery(selectedCategory, filters);
 
+            // if the result is not null the results are displayed and processed
             if (result != null) {
                 displayAndProcessResults(selectedCategory, result);
             }
             returnToMainMenu();
         }
     }
-
+    // this method is used to perform the initial query filtering
     private JSONObject executeInitialQuery(Category selectedCategory, JSONObject filters) {
         try {
             JSONObject result = queryCategory(selectedCategory, filters);
+            // this variable is used to store the total number of results after filtering
             int totalAvailable = result.getInt("totalDocs");
-
+            // this condition executes the no results ui if no results are found
             if (totalAvailable == 0) {
                 displayNoResultsFound(selectedCategory);
                 return null;
@@ -63,13 +59,15 @@ public class Filter extends apiCalls {
 
             System.out.println(settings.formatMenuHeader("Search Results"));
             System.out.println(settings.formatHighlight("Total available results: " + totalAvailable));
-
+            // this variable is used to store the number of results to display based on user choice
             int limit = selectLimit(totalAvailable);
+            // if limit is greater than 0 the query gets an extra limit of amount of results to be displayed
             if (limit > 0) {
                 JSONObject options = new JSONObject();
                 options.put("limit", limit);
                 filters.put("options", options);
                 result = queryCategory(selectedCategory, filters);
+                // after the filtering if fully executed the results are saved into cache
                 cache.saveOperation(selectedCategory.name(), "filter", result);
             }
             return result;
@@ -79,6 +77,7 @@ public class Filter extends apiCalls {
         }
     }
 
+//    this method is used to display the results in different ways based on user's choice
     private void displayAndProcessResults(Category selectedCategory, JSONObject result) {
         System.out.println(settings.formatMenuHeader("View Options"));
         System.out.println(settings.formatMenuItem("1", "Select specific fields to display"));
@@ -97,49 +96,50 @@ public class Filter extends apiCalls {
             }
         }
     }
-
+    // this method is used to select the category
     private Category selectCategory() {
         while (true) {
+            displayCategoryMenu();
+            
             try {
-                System.out.println(settings.formatMenuHeader("Select Category"));
-                System.out.println(settings.formatMenuItem("1", "Launches"));
-                System.out.println(settings.formatMenuItem("2", "Rockets"));
-                System.out.println(settings.formatMenuItem("3", "Launchpads"));
-                System.out.println(settings.formatMenuItem("4", "Crew"));
-                System.out.println(settings.formatMenuItem("5", "Capsules"));
-                System.out.println(settings.formatMenuItem("6", "Starlinks"));
-
-                System.out.print("\n" + settings.formatPrompt("Enter your choice (1-6): "));
                 if (!scanner.hasNextInt()) {
-                    System.out.println("Please enter a valid number.");
-                    scanner.nextLine();
+                    System.out.println(settings.formatError("Please enter a valid number."));
+                    scanner.nextLine(); // Clear invalid input
                     continue;
                 }
 
-                int choice = getValidChoice(1, 6);
+                int choice = scanner.nextInt();
+                scanner.nextLine(); // Clear buffer
 
-                switch (choice) {
-                    case 1:
-                        return Category.LAUNCHES;
-                    case 2:
-                        return Category.ROCKETS;
-                    case 3:
-                        return Category.LAUNCHPADS;
-                    case 4:
-                        return Category.CREW;
-                    case 5:
-                        return Category.CAPSULES;
-                    case 6:
-                        return Category.STARLINK;
-                    default:
-                        System.out.println("Please enter a number between 1 and 7.");
-                        continue;
-                }
+                return switch (choice) {
+                    case 1 -> Category.LAUNCHES;
+                    case 2 -> Category.ROCKETS;
+                    case 3 -> Category.LAUNCHPADS;
+                    case 4 -> Category.CREW;
+                    case 5 -> Category.CAPSULES;
+                    case 6 -> Category.STARLINK;
+                    default -> {
+                        System.out.println(settings.formatError("Invalid choice: " + choice));
+                        System.out.println(settings.formatHighlight("Please enter a number between 1 and 6"));
+                        yield null;
+                    }
+                };
             } catch (Exception e) {
-                System.out.println("Error selecting category: " + e.getMessage());
+                System.out.println(settings.formatError("Error selecting category: " + e.getMessage()));
                 scanner.nextLine(); // Clear any bad input
             }
         }
+    }
+
+    private void displayCategoryMenu() {
+        System.out.println(settings.formatMenuHeader("Select Category"));
+        System.out.println(settings.formatMenuItem("1", "Launches"));
+        System.out.println(settings.formatMenuItem("2", "Rockets"));
+        System.out.println(settings.formatMenuItem("3", "Launchpads"));
+        System.out.println(settings.formatMenuItem("4", "Crew"));
+        System.out.println(settings.formatMenuItem("5", "Capsules"));
+        System.out.println(settings.formatMenuItem("6", "Starlinks"));
+        System.out.print("\n" + settings.formatPrompt("Enter your choice (1-6): "));
     }
 
     private int selectLimit(int totalAvailable) {
@@ -756,11 +756,6 @@ public class Filter extends apiCalls {
         }
     }
 
-    private void displayOperationComplete() {
-        System.out.println(settings.formatMenuHeader("Operation Complete"));
-        System.out.println(settings.formatSuccess("Data retrieval successful"));
-        System.out.println(settings.formatHighlight("─".repeat(50)));
-    }
 }
 
 

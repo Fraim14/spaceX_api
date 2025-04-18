@@ -1,4 +1,4 @@
-
+//Maksym Shtymak 3151565
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -10,6 +10,7 @@ import java.io.InputStream;
 
 
 public class apiCalls {
+    //this is the base URL for the SpaceX API
     public final String baseUrl = "https://api.spacexdata.com/v4";
 
 
@@ -21,9 +22,10 @@ public class apiCalls {
         connection.setRequestProperty("Accept", "application/json");
 
         try {
-
+            // get the response of the api call
             InputStream inputStream = connection.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            // use the string builder to store the response
             StringBuilder response = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -48,18 +50,21 @@ public class apiCalls {
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("Accept", "application/json");
+        // this property is used to make the post particulary in the body ob api
         connection.setDoOutput(true);
 
 
         try {
             try {
                 OutputStream outputStream = connection.getOutputStream();
+                // divide the filter into bytes and then write it to the output stream
                 byte[] input = filter.toString().getBytes();
                 outputStream.write(input, 0, input.length);
                 outputStream.close();
             } catch (Exception e) {
                 System.out.println(e);
             }
+            // get the filtered response of the api
             InputStream inputStream = connection.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             StringBuilder response = new StringBuilder();
@@ -77,7 +82,7 @@ public class apiCalls {
 
 
     }
-
+    // this enum is used to store tge basic endpoints of the api which are used in another methods and classes
     public enum Category {
         LAUNCHES("/launches"),
         ROCKETS("/rockets"),
@@ -87,21 +92,22 @@ public class apiCalls {
         STARLINK("/starlink");
 
         private final String endpoint;
-
+        // a constructor for the enum
         Category(String endpoint) {
             this.endpoint = endpoint;
         }
-
+        // this method gets the endpoint of the enum
         public String getEndpoint() {
             return endpoint;
         }
     }
 
-
+    // thsi method finds the object based in his id
     public JSONObject getItemById(Category category, String id) throws Exception {
         return get(category.getEndpoint() + "/" + id);
     }
 
+    // this method is a main filtering method which is used to filter the data by the user with the use of query file of api
     public JSONObject queryCategory(Category category, JSONObject filters) throws Exception {
         return post(category.getEndpoint() + "/query", filters);
     }
