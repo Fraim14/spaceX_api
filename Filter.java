@@ -29,6 +29,7 @@ public class Filter extends apiCalls {
             returnToMainMenu();
         }
     }
+
     // this method is used to filter the data
     public void filterData() {
         // the category is selected by the user and the filters are created for the selected category
@@ -45,6 +46,7 @@ public class Filter extends apiCalls {
             returnToMainMenu();
         }
     }
+
     // this method is used to perform the initial query filtering
     private JSONObject executeInitialQuery(Category selectedCategory, JSONObject filters) {
         try {
@@ -77,7 +79,7 @@ public class Filter extends apiCalls {
         }
     }
 
-//    this method is used to display the results in different ways based on user's choice
+    //    this method is used to display the results in different ways based on user's choice
     private void displayAndProcessResults(Category selectedCategory, JSONObject result) {
         System.out.println(settings.formatMenuHeader("View Options"));
         System.out.println(settings.formatMenuItem("1", "Select specific fields to display"));
@@ -87,30 +89,33 @@ public class Filter extends apiCalls {
         if (scanner.hasNextInt()) {
             int choice = scanner.nextInt();
             scanner.nextLine(); // Clear buffer
-
+            // this part displays only the fields selected by the user
             if (choice == 1) {
                 displaySelectedFields(selectedCategory, result);
             } else {
+                // this part displays all  information
                 System.out.println(settings.formatMenuHeader("Complete Results"));
                 displayAllInformation(selectedCategory, result);
             }
         }
     }
+
     // this method is used to select the category
     private Category selectCategory() {
         while (true) {
             displayCategoryMenu();
-            
+
             try {
                 if (!scanner.hasNextInt()) {
                     System.out.println(settings.formatError("Please enter a valid number."));
-                    scanner.nextLine(); // Clear invalid input
+                    // clear the invalid input
+                    scanner.nextLine();
                     continue;
                 }
 
                 int choice = scanner.nextInt();
-                scanner.nextLine(); // Clear buffer
-
+                scanner.nextLine();
+                // this switch is used to select the category based on the user's choice
                 return switch (choice) {
                     case 1 -> Category.LAUNCHES;
                     case 2 -> Category.ROCKETS;
@@ -131,6 +136,7 @@ public class Filter extends apiCalls {
         }
     }
 
+    // this is a ui part for the category selection menu
     private void displayCategoryMenu() {
         System.out.println(settings.formatMenuHeader("Select Category"));
         System.out.println(settings.formatMenuItem("1", "Launches"));
@@ -142,13 +148,14 @@ public class Filter extends apiCalls {
         System.out.print("\n" + settings.formatPrompt("Enter your choice (1-6): "));
     }
 
+    // this methods constraints the number of results that user want to see
     private int selectLimit(int totalAvailable) {
         while (true) {
             System.out.println(settings.formatMenuHeader("Select Number of Results"));
             System.out.println(settings.formatMenuItem("1", "Show all results"));
             System.out.println(settings.formatMenuItem("2", "Specify number of results"));
 
-            // Format the maximum available results line using Settings methods
+            // this part displays the maximum number of results
             String maxResults = String.format("Maximum available results: %d", totalAvailable);
             System.out.println(settings.formatBoxedInfo(maxResults));
 
@@ -163,14 +170,15 @@ public class Filter extends apiCalls {
 
             int choice = scanner.nextInt();
             scanner.nextLine(); // Clear buffer
-
+            // this condition displays all available results
             if (choice == 1) {
                 return totalAvailable;
+                // this part gives user an option to select the number of results
             } else if (choice == 2) {
                 System.out.print(settings.formatPrompt("Enter number of results (1-" + totalAvailable + "): "));
                 if (scanner.hasNextInt()) {
                     int limit = scanner.nextInt();
-                    scanner.nextLine(); // Clear buffer
+                    scanner.nextLine();
                     if (limit > 0 && limit <= totalAvailable) {
                         return limit;
                     }
@@ -186,11 +194,13 @@ public class Filter extends apiCalls {
         }
     }
 
+    // this method is used to verify the boolean values written by the user
     private boolean getValidBoolean(String prompt) {
         while (true) {
             System.out.print(settings.formatPrompt(prompt));
             String input = scanner.nextLine().toLowerCase().trim();
             if (input.equals("true") || input.equals("false")) {
+                // parse the value into boolean to ensure that it will be boolean
                 return Boolean.parseBoolean(input);
             }
             System.out.println(settings.formatError("Invalid input: '" + input + "'"));
@@ -198,9 +208,11 @@ public class Filter extends apiCalls {
         }
     }
 
+    // this method is responsible for handling the string inputs
     private String getValidInput(String prompt) {
         while (true) {
             System.out.print(settings.formatPrompt(prompt));
+            // remove the extra redundant spaces
             String input = scanner.nextLine().trim();
             if (!input.isEmpty()) {
                 return input;
@@ -210,6 +222,7 @@ public class Filter extends apiCalls {
         }
     }
 
+    // this method is responsible for handling the choices in the menus
     private int getValidChoice(int min, int max) {
         while (true) {
             try {
@@ -221,7 +234,8 @@ public class Filter extends apiCalls {
                     continue;
                 }
                 int choice = scanner.nextInt();
-                scanner.nextLine(); // consume newline
+                scanner.nextLine();
+                // min and max are the number of options in the menu
                 if (choice >= min && choice <= max) {
                     return choice;
                 }
@@ -235,12 +249,16 @@ public class Filter extends apiCalls {
         }
     }
 
+    // this method is used to create the filters for selected category
     private JSONObject createFilters(Category category) {
+        // this is the main query object that is used to store the filters
         JSONObject filters = new JSONObject();
+        // this is the query object that is used to store the filters
         JSONObject query = new JSONObject();
 
         System.out.println(settings.formatMenuHeader("Create Filters"));
 
+        // this switch is used to select the category based on the user's choice
         switch (category) {
             case LAUNCHES:
                 createLaunchFilters(query);
@@ -261,11 +279,12 @@ public class Filter extends apiCalls {
                 createStarlinkFilters(query);
                 break;
         }
-
+        // send the filters to api query file
         filters.put("query", query);
         return filters;
     }
 
+    // now there wil be 6 methods for creation the methods which will have quite the same code
     private void createLaunchFilters(JSONObject query) {
         System.out.println(settings.formatMenuHeader("Launch Filters"));
         System.out.println(settings.formatMenuItem("1", "Filter by success"));
@@ -275,10 +294,12 @@ public class Filter extends apiCalls {
         int choice = getValidChoice(1, 3);
 
         System.out.println(settings.formatBoxedInfo("Configure Filters"));
+        // this switch is used to display basic filters for each category(there are 2 of them for each category)
         switch (choice) {
             case 1 -> {
                 System.out.println(settings.formatHighlight("\nEnter 'true' for successful launches, 'false' for failed launches"));
                 boolean success = getValidBoolean(settings.formatPrompt("Success (true/false): "));
+                // add the filter to the query
                 query.put("success", success);
                 System.out.println(settings.formatSuccess("Filter applied: success = " + success));
             }
@@ -288,6 +309,7 @@ public class Filter extends apiCalls {
                 query.put("upcoming", upcoming);
                 System.out.println(settings.formatSuccess("Filter applied: upcoming = " + upcoming));
             }
+            // this case is responsible for displaying both filters and handling both of their outputs
             case 3 -> {
                 System.out.println(settings.formatHighlight("\nEnter 'true' for successful launches, 'false' for failed launches"));
                 boolean success = getValidBoolean(settings.formatPrompt("Success (true/false): "));
@@ -302,6 +324,7 @@ public class Filter extends apiCalls {
         }
     }
 
+    // these are the filters for the rocket category
     private void createRocketFilters(JSONObject query) {
         System.out.println(settings.formatMenuHeader("Rocket Filters"));
         System.out.println(settings.formatMenuItem("1", "Filter by active status"));
@@ -344,6 +367,7 @@ public class Filter extends apiCalls {
     }
 
 
+    // these are the filters for the launchpad category
     private void createLaunchpadFilters(JSONObject query) {
         System.out.println(settings.formatMenuHeader("Launchpad Filters"));
         System.out.println(settings.formatMenuItem("1", "Filter by status"));
@@ -403,6 +427,7 @@ public class Filter extends apiCalls {
         }
     }
 
+    // these are the filters for the crew category
     private void createCrewFilters(JSONObject query) {
         System.out.println(settings.formatMenuHeader("Crew Filters"));
         System.out.println(settings.formatMenuItem("1", "Filter by agency"));
@@ -458,6 +483,7 @@ public class Filter extends apiCalls {
     }
 
 
+    // these are the filters for the capsule category
     private void createCapsuleFilters(JSONObject query) {
         System.out.println(settings.formatMenuHeader("Capsule Filters"));
         System.out.println(settings.formatMenuItem("1", "Filter by status"));
@@ -512,6 +538,7 @@ public class Filter extends apiCalls {
         }
     }
 
+    // these are the filters for the starlink category
     private void createStarlinkFilters(JSONObject query) {
         System.out.println(settings.formatMenuHeader("Starlink Filters"));
         System.out.println(settings.formatMenuItem("1", "Filter by version"));
@@ -562,6 +589,7 @@ public class Filter extends apiCalls {
         }
     }
 
+    // this method is used to show  the user a message if no results are found with possibles causes of this promblem
     private void displayNoResultsFound(Category selectedCategory) {
         System.out.println(settings.formatMenuHeader("No Results Found"));
         System.out.println(settings.formatError("No matching results were found for your search criteria"));
@@ -577,15 +605,16 @@ public class Filter extends apiCalls {
         System.out.println(settings.formatMenuItem("•", "Try using fewer filters"));
     }
 
+    // this method is used to display the particular fields of the result, which user has selected
     private void displaySelectedFields(Category category, JSONObject result) {
         JSONArray docs = result.getJSONArray("docs");
-
+        // this condition ensures that result exists
         if (docs.length() == 0) {
             System.out.println(settings.formatError("No matching records found"));
             return;
         }
 
-        // Define available fields based on category
+        // this array is used to store the avaliable fields for each category, which user can choose
         String[] availableFields;
         switch (category) {
             case LAUNCHES ->
@@ -602,19 +631,21 @@ public class Filter extends apiCalls {
         }
 
         while (true) {
-            // Display available fields
+            //this part is responsible for the available fields
             System.out.println(settings.formatMenuHeader("Available Fields"));
             for (int i = 0; i < availableFields.length; i++) {
                 String fieldName = availableFields[i];
+                // this part formats the field name properly
                 String displayName = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1).replace("_", " ");
                 System.out.println(settings.formatMenuItem((i + 1) + "", displayName));
             }
 
             // Get user's field selections
             System.out.print(settings.formatPrompt("Select fields to display (enter numbers separated by spaces): "));
+            // ensure that the input is in valid format
             String[] selections = scanner.nextLine().trim().split("\\s+");
 
-            // Validate all selections before processing
+            // ensure that the user input will be valid
             boolean hasInvalidSelection = false;
             for (String selection : selections) {
                 try {
@@ -635,11 +666,11 @@ public class Filter extends apiCalls {
 
             // If any selection was invalid, continue the loop
             if (hasInvalidSelection) {
-                System.out.println();  // Add blank line for readability
+                System.out.println();
                 continue;
             }
 
-            // Process and display results
+            //  display results
             System.out.println(settings.formatMenuHeader("Results"));
             for (int i = 0; i < docs.length(); i++) {
                 JSONObject doc = docs.getJSONObject(i);
@@ -656,7 +687,7 @@ public class Filter extends apiCalls {
                         String wikiLink = links.optString("wikipedia", "N/A");
                         System.out.println(settings.formatMenuItem("Wikipedia Link", wikiLink));
                     }
-                    // Regular fields
+                    // Regular fields and replacing the null value with N/A
                     else {
                         Object value = doc.has(fieldName) ? doc.get(fieldName) : "N/A";
                         System.out.println(settings.formatMenuItem(displayName, value.toString()));
@@ -669,19 +700,21 @@ public class Filter extends apiCalls {
                 }
             }
 
-            // Break the loop after successful display
             break;
         }
     }
 
+    // this method is used to find the object by id
     public void findById() {
         Category selectedCategory = selectCategory();
+        // ensure that the selected category is not null
         if (selectedCategory != null) {
             try {
                 System.out.println(settings.formatMenuHeader("Find " + selectedCategory.name() + " by ID"));
 
                 // Display ID format example based on category
                 System.out.println(settings.formatHighlight("ID Format Example:"));
+                // exapmles of id for each category
                 switch (selectedCategory) {
                     case LAUNCHES -> System.out.println(settings.formatMenuItem("•", "5eb87cd9ffd86e000604b32a"));
                     case ROCKETS -> System.out.println(settings.formatMenuItem("•", "5e9d0d95eda69955f709d1eb"));
@@ -727,15 +760,20 @@ public class Filter extends apiCalls {
             } catch (Exception e) {
                 System.out.println(settings.formatError("Error: " + e.getMessage()));
             }
+            // if the execution of the code is successful the user is asked to return to the main menu
             returnToMainMenu();
         }
     }
 
+    // this method is used to display all information about the  object if user selects this option
     private void displayAllInformation(Category category, JSONObject result) {
         JSONArray docs = result.getJSONArray("docs");
+        // this list is used to store the information about the object from the jsonArray
         List<DTO> dtoList = DTO.fromJSONArray(docs, category);
 
+        // Display each result
         for (int i = 0; i < dtoList.size(); i++) {
+            //. styled header for each result
             System.out.println(settings.formatMenuHeader("Result " + (i + 1)));
 
             // Split the information into lines and format each line

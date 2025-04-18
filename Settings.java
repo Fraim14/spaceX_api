@@ -7,10 +7,11 @@ import java.nio.file.Paths;
 public class Settings {
     private static Settings instance;
     private JSONObject settings;
+    // this filename of the file which is  used to store the settings
     private static final String SETTINGS_FILE = "settings.json";
 
     // ANSI color codes
-
+    // these are the color templates for the design
     private static final String RESET = "\u001B[0m";
     private static final String CYAN = "\u001B[36m";
     private static final String GREEN = "\u001B[32m";
@@ -20,10 +21,12 @@ public class Settings {
     private static final String PURPLE = "\u001B[35m";
     private static final String WHITE_BOLD = "\u001B[1;37m";
 
+    // this is the constructor
     private Settings() {
         loadSettings();
     }
 
+    // thsi method is used to get the class object
     public static Settings getInstance() {
         if (instance == null) {
             instance = new Settings();
@@ -31,12 +34,15 @@ public class Settings {
         return instance;
     }
 
+    // this method loads the settings
     private void loadSettings() {
         try {
             if (Files.exists(Paths.get(SETTINGS_FILE))) {
+                // set the settings
                 String content = new String(Files.readAllBytes(Paths.get(SETTINGS_FILE)));
                 settings = new JSONObject(content);
             } else {
+                //return to the default settings
                 setDefaultSettings();
             }
         } catch (IOException e) {
@@ -45,6 +51,7 @@ public class Settings {
         }
     }
 
+    // this method creates the default settings
     private void setDefaultSettings() {
         settings = new JSONObject();
         JSONObject display = new JSONObject();
@@ -54,6 +61,7 @@ public class Settings {
         saveSettings();
     }
 
+    // this method saves the settings into settings file
     public void saveSettings() {
         try {
             Files.write(Paths.get(SETTINGS_FILE), settings.toString(2).getBytes());
@@ -62,6 +70,7 @@ public class Settings {
         }
     }
 
+    // these are the methods for getting and setting the settings
     public boolean getColoredOutput() {
         return settings.getJSONObject("display").getBoolean("coloredOutput");
     }
@@ -80,6 +89,7 @@ public class Settings {
         saveSettings();
     }
 
+    // this method makes the design template for the header of som parts fo app
     public String formatHeader(String text) {
         if (!getColoredOutput()) {
             return "\n┌─" + "─".repeat(text.length() + 2) + "─┐\n" +
@@ -91,6 +101,7 @@ public class Settings {
                 "└─" + "─".repeat(text.length() + 2) + "─┘" + RESET;
     }
 
+    //these are the methods for formatting the output
     public String formatSuccess(String text) {
         return getColoredOutput() ? GREEN + "✓ " + text + RESET : "+ " + text;
     }
@@ -114,6 +125,7 @@ public class Settings {
         return PURPLE + number + RESET + " → " + WHITE_BOLD + description + RESET;
     }
 
+    // this method designs the header of the menu
     public String formatMenuHeader(String title) {
         if (!getColoredOutput()) {
             return "\n=== " + title + " ===";
@@ -124,10 +136,12 @@ public class Settings {
                 line + RESET;
     }
 
+    // this method designs the prompt
     public String formatPrompt(String text) {
         return getColoredOutput() ? YELLOW + text + RESET : text;
     }
 
+    // this method designs the boxed information
     public String formatBoxedInfo(String text) {
         if (!getColoredOutput()) {
             return "\n=== " + text + " ===";

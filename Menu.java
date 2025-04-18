@@ -9,6 +9,7 @@ public class Menu {
         scanner = new Scanner(System.in);
     }
 
+    // this is the ui for main menu
     public void menuOptions() {
         System.out.println(settings.formatMenuHeader("Space-X API Menu"));
         System.out.println(settings.formatMenuItem("1", "Select what you want to find"));
@@ -17,6 +18,7 @@ public class Menu {
         System.out.print("\n" + settings.formatPrompt("Enter your choice: "));
     }
 
+    // this is the method that is used to handle the user's choice and response to it
     public void castMenu() {
         while (true) {
             String input = scanner.nextLine();
@@ -40,6 +42,7 @@ public class Menu {
         }
     }
 
+    // this is the ui and handler for settings menu
     private void displaySettingsMenu() {
         while (true) {
             System.out.println(settings.formatMenuHeader("Settings"));
@@ -54,7 +57,6 @@ public class Menu {
             System.out.println(settings.formatMenuItem("3", "Back to Main Menu"));
 
             System.out.print(settings.formatPrompt("Enter your choice (1-3): "));
-
             String input = scanner.nextLine();
             switch (input) {
                 case "1":
@@ -73,12 +75,14 @@ public class Menu {
         }
     }
 
+    // this is the method that is used to change the colored output
     private void toggleColoredOutput() {
         boolean current = settings.getColoredOutput();
         settings.setColoredOutput(!current);
         System.out.println(settings.formatSuccess("Colored output: " + (!current ? "Enabled" : "Disabled")));
     }
 
+    // this is the method that is used to change the date format
     private void changeDateFormat() {
         while (true) {
             System.out.println(settings.formatMenuHeader("Date Format Settings"));
@@ -107,15 +111,15 @@ public class Menu {
         }
     }
 
-    // toggleEmoji method removed
-
+    // this is the ui for the serch menu
     public void displayFilterMenu() {
         System.out.println(settings.formatHeader("Search Options"));
-        System.out.println(settings.formatMenuItem("1", "Filter"));
+        System.out.println(settings.formatMenuItem("1", "Filter your data"));
         System.out.println(settings.formatMenuItem("2", "Find by ID"));
         System.out.println(settings.formatMenuItem("3", "Back to Main Menu"));
     }
 
+    // this is the handler for the search menu
     public void castFilterMenu() {
         while (true) {
             String input = scanner.nextLine();
@@ -139,6 +143,7 @@ public class Menu {
         }
     }
 
+    // this method starts the menu
     public void displayMenu() {
         menuOptions();
         castMenu();

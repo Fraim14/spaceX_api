@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DTO extends apiCalls {
+    // these are the variables for the api response data
     private String id;
     private String name;
     private String type;
@@ -34,7 +35,9 @@ public class DTO extends apiCalls {
 
     // Constructor from JSONObject
     public DTO(JSONObject json, Category category) {
+        // call the default constructor
         this();
+        // this switch is used to parse the json object based on the category
         switch (category) {
             case LAUNCHES -> parseLaunch(json);
             case ROCKETS -> parseRocket(json);
@@ -45,6 +48,7 @@ public class DTO extends apiCalls {
         }
     }
 
+    // this is a data format template for launch category
     private void parseLaunch(JSONObject json) {
         this.id = json.optString("id", "N/A");
         this.name = json.optString("name", "N/A");
@@ -53,13 +57,14 @@ public class DTO extends apiCalls {
         this.success = json.optBoolean("success", false);
         this.details = json.optString("details", "N/A");
         this.upcoming = json.optBoolean("upcoming", false);
-
+        // special handling for links
         if (json.has("links")) {
             JSONObject links = json.getJSONObject("links");
             this.wikipediaLink = links.optString("wikipedia", "N/A");
         }
     }
 
+    // this is a data format template for rocket category
     private void parseRocket(JSONObject json) {
         this.id = json.optString("id", "N/A");
         this.name = json.optString("name", "N/A");
@@ -69,6 +74,7 @@ public class DTO extends apiCalls {
         this.wikipediaLink = json.optString("wikipedia", "N/A");
     }
 
+    // this is a data format template for launchpad category
     private void parseLaunchpad(JSONObject json) {
         this.id = json.optString("id", "N/A");
         this.name = json.optString("name", "N/A");
@@ -79,13 +85,14 @@ public class DTO extends apiCalls {
         this.longitude = json.optDouble("longitude", 0.0);
     }
 
+    // this is a data format template for crew category
     private void parseCrew(JSONObject json) {
         this.id = json.optString("id", "N/A");
         this.name = json.optString("name", "N/A");
         this.agency = json.optString("agency", "N/A");
         this.status = json.optString("status", "N/A");
         this.wikipediaLink = json.optString("wikipedia", "N/A");
-
+        // special handling for launches
         if (json.has("launches")) {
             JSONArray launchesArray = json.getJSONArray("launches");
             for (int i = 0; i < launchesArray.length(); i++) {
@@ -94,6 +101,7 @@ public class DTO extends apiCalls {
         }
     }
 
+    // this is a data format  template for capsule category
     private void parseCapsule(JSONObject json) {
         this.id = json.optString("id", "N/A");
         this.serial = json.optString("serial", "N/A");
@@ -101,6 +109,7 @@ public class DTO extends apiCalls {
         this.status = json.optString("status", "N/A");
         this.lastUpdate = json.optString("last_update", "N/A");
 
+        // special handling for launches
         if (json.has("launches")) {
             JSONArray launchesArray = json.getJSONArray("launches");
             for (int i = 0; i < launchesArray.length(); i++) {
@@ -109,6 +118,7 @@ public class DTO extends apiCalls {
         }
     }
 
+    // this is a data format template for starlink category
     private void parseStarlink(JSONObject json) {
         this.id = json.optString("id", "N/A");
         this.version = json.optString("version", "N/A");
@@ -120,6 +130,7 @@ public class DTO extends apiCalls {
     }
 
 
+    //this method is used to display all info about the object in formatted way
     public String displayAllInformation(Category category) {
         StringBuilder display = new StringBuilder();
 
@@ -135,6 +146,7 @@ public class DTO extends apiCalls {
         return display.toString();
     }
 
+    // this is display format for launch category
     private String displayLaunchInfo() {
         StringBuilder info = new StringBuilder();
         info.append("Launch Information:\n");
@@ -150,6 +162,7 @@ public class DTO extends apiCalls {
         return info.toString();
     }
 
+    // this is display format for rocket category
     private String displayRocketInfo() {
         StringBuilder info = new StringBuilder();
         info.append("Rocket Information:\n");
@@ -163,6 +176,7 @@ public class DTO extends apiCalls {
         return info.toString();
     }
 
+    // this is display format for launchpad category
     private String displayLaunchpadInfo() {
         StringBuilder info = new StringBuilder();
         info.append("Launchpad Information:\n");
@@ -177,6 +191,7 @@ public class DTO extends apiCalls {
         return info.toString();
     }
 
+    // this is display format for crew category
     private String displayCrewInfo() {
         StringBuilder info = new StringBuilder();
         info.append("Crew Member Information:\n");
@@ -193,6 +208,7 @@ public class DTO extends apiCalls {
         return info.toString();
     }
 
+    // this is display format for capsule category
     private String displayCapsuleInfo() {
         StringBuilder info = new StringBuilder();
         info.append("Capsule Information:\n");
@@ -209,6 +225,7 @@ public class DTO extends apiCalls {
         return info.toString();
     }
 
+    // this is display format for starlink category
     private String displayStarlinkInfo() {
         StringBuilder info = new StringBuilder();
         info.append("Starlink Satellite Information:\n");
@@ -233,32 +250,7 @@ public class DTO extends apiCalls {
         return dtoList;
     }
 
-    public String displayCompactInformation(Category category) {
-        StringBuilder display = new StringBuilder();
-        Settings settings = Settings.getInstance();
-        String dateFormat = settings.getDateFormat();
-
-        switch (category) {
-            case LAUNCHES:
-                display.append("Name: ").append(name)
-                        .append(" | Date: ").append(formatDate(dateUtc, dateFormat))
-                        .append(" | Success: ").append(success);
-                break;
-            case ROCKETS:
-                display.append("Name: ").append(name)
-                        .append(" | Type: ").append(type)
-                        .append(" | Active: ").append(active);
-                break;
-            case LAUNCHPADS:
-                display.append("Name: ").append(name)
-                        .append(" | Region: ").append(region)
-                        .append(" | Status: ").append(status);
-                break;
-            // Add cases for other categories...
-        }
-        return display.toString();
-    }
-
+    // Method to format date based on user's preference
     private String formatDate(String dateStr, String format) {
         if (dateStr == null) return "N/A";
         // Implement date formatting based on UTC or Local setting
@@ -266,6 +258,7 @@ public class DTO extends apiCalls {
         return format.equals("UTC") ? dateStr : convertToLocalTime(dateStr);
     }
 
+    // Helper method to convert UTC date to local time
     private String convertToLocalTime(String utcDate) {
         // Implement conversion from UTC to local time
         // You'll need to add actual conversion logic here

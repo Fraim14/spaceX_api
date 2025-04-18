@@ -1,4 +1,5 @@
 //Maksym Shtymak 3151565
+
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -82,6 +83,7 @@ public class apiCalls {
 
 
     }
+
     // this enum is used to store tge basic endpoints of the api which are used in another methods and classes
     public enum Category {
         LAUNCHES("/launches"),
@@ -92,10 +94,12 @@ public class apiCalls {
         STARLINK("/starlink");
 
         private final String endpoint;
+
         // a constructor for the enum
         Category(String endpoint) {
             this.endpoint = endpoint;
         }
+
         // this method gets the endpoint of the enum
         public String getEndpoint() {
             return endpoint;
